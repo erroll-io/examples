@@ -1,4 +1,11 @@
+using System;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+#if DEBUG
+using Microsoft.AspNetCore.Hosting;
+#endif
+using Microsoft.Extensions.DependencyInjection;
 
 using Amazon.Lambda.Serialization.SystemTextJson;
 

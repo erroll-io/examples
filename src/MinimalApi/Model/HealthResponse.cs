@@ -1,3 +1,5 @@
+using System;
+
 namespace MinimalApi;
 
 public class HealthResponse
