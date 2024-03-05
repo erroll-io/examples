@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace MinimalApi;
 
@@ -8,4 +9,8 @@ public class HealthResponse
     public string Echo { get; set; }
     public DateTime Now { get; set; }
     public DateTime Then { get; set; }
+
+    public string AwsAccountId { get; set; }
+    public IEnumerable<string> RedirectUrls { get; set; }
+    public string TestSecret { get; set; }
 }
