@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace MinimalApi;
 
@@ -9,13 +10,19 @@ public static class HealthController
 {
     public static async Task<IResult> GetHealth(
         [FromServices] IHttpContextAccessor contextAccessor,
+        [FromServices] IOptions<AwsConfig> awsConfigOptions,
+        [FromServices] IOptions<OauthConfig> oauthConfigOptions,
         [FromQuery] string? echo)
     {
         return Results.Ok(new HealthResponse()
         {
             Now = DateTime.UtcNow,
             RequestorIp = contextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? string.Empty,
-            Echo = echo
+            Echo = echo,
+
+            AwsAccountId = awsConfigOptions.Value.AccountId,
+            RedirectUrls = oauthConfigOptions.Value.RedirectUrls,
+            TestSecret = oauthConfigOptions.Value.TestSecret
         });
     }
 
