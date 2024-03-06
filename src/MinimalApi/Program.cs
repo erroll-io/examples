@@ -23,6 +23,13 @@ builder.Configuration
 builder.Configuration.AddSystemsManagerWithHack("/minimal-api");
 //builder.Configuration.AddSystemsManager("/minimal-api");
 
+builder.Services.Configure<AwsConfig>(builder.Configuration.GetSection<AwsConfig>());
+builder.Services.Configure<OauthConfig>(builder.Configuration.GetSection<OauthConfig>());
+// TODO: these don't work, presumably due to source generator being able to 
+// intercept Configure<ActualType>(), but not Configure<TConfig>(). Investigate.
+//builder.AddConfig<AwsConfig>();
+//builder.AddConfig<OauthConfig>();
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Add(MinimalApiJsonSerializerContext.Default);
@@ -37,8 +44,6 @@ builder.Services.AddAWSLambdaHosting(
         opts.Serializer = new SourceGeneratorLambdaJsonSerializer<MinimalApiJsonSerializerContext>();
     });
 
-builder.Services.Configure<AwsConfig>(builder.Configuration.GetSection<AwsConfig>());
-builder.Services.Configure<OauthConfig>(builder.Configuration.GetSection<OauthConfig>());
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 #if DEBUG
