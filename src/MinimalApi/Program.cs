@@ -44,6 +44,8 @@ builder.Services.AddAWSLambdaHosting(
         opts.Serializer = new SourceGeneratorLambdaJsonSerializer<MinimalApiJsonSerializerContext>();
     });
 
+builder.Services.Configure<AwsConfig>(builder.Configuration.GetSection<AwsConfig>());
+builder.Services.Configure<OauthConfig>(builder.Configuration.GetSection<OauthConfig>());
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 #if DEBUG
