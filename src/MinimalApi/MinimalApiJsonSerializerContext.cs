@@ -10,6 +10,8 @@ namespace MinimalApi;
 [JsonSerializable(typeof(APIGatewayHttpApiV2ProxyResponse))]
 [JsonSerializable(typeof(HealthRequest))]
 [JsonSerializable(typeof(HealthResponse))]
+[JsonSerializable(typeof(UserCreateRequest))]
+[JsonSerializable(typeof(UserResponse))]
 public partial class MinimalApiJsonSerializerContext : JsonSerializerContext
 {
 }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace MinimalApi;
 
-public static class HealthController
+public static class HealthEndpoints
 {
     public static async Task<IResult> GetHealth(
         [FromServices] IHttpContextAccessor contextAccessor,
