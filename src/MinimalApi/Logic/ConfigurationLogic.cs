@@ -8,8 +8,8 @@ namespace MinimalApi;
 public static class ConfigurationLogic
 {
     // TODO: these AddConfig extensions don't work with AOT, presumably due to
-    // the source generator being able to intercept Configure<ActualType>(), but
-    // not Configure<TConfig>(). Investigate.
+    // the source generator being able to intercept e.g. Configure<ActualType>()
+    // but _not_ able to intercept e.g. Configure<TConfig>(). Investigate.
 
     public static IServiceCollection AddConfig<TConfig>(
         this WebApplicationBuilder builder)
