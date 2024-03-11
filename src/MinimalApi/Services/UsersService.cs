@@ -184,6 +184,7 @@ public class UsersService : IUsersService
 
         return ToUser(response.Items.SingleOrDefault());
     }
+
     private async Task<User> GetUserByEmailHash(string emailHash)
     {
         var response = await _dynamoClient.QueryAsync(

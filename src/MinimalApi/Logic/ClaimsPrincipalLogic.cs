@@ -3,17 +3,13 @@ using System.Security.Claims;
 
 namespace MinimalApi;
 
-public enum Provider
-{
-    Cognito,
-    Google,
-    Github
-}
-
 public static class ClaimsPrincipalLogic
 {
     public static string GetPrincipalIdentity(this ClaimsPrincipal user)
     {
+        // Cognito `sub` values are globally unique, we cannot rely on them to
+        // persist through a data recovery event, so we use `username` instead.
+
         var claim = user.Claims.FirstOrDefault(claim => claim.Type == "username");
 
         if (claim == default)
