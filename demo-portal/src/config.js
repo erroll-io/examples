@@ -1,3 +1,26 @@
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+
 export const googleConfig = {
-    clientId: "800714268289-0825fj8iec4on3smu9ldv6oqnppnp3id.apps.googleusercontent.com"
+    clientId: process.env.VUE_APP_GOOGLE_CLIENT_ID
+};
+
+const params = [
+    {
+        paramName: '/minimal-api/googleConfig/portalClientId',
+        envKey: 'VUE_APP_GOOGLE_CLIENT_ID'
+    }
+];
+
+export const hydrateEnvFromSsm = async (env) => {
+    const client = new SSMClient();
+
+    for (const entry of params) {
+        var resp = await client.send(
+            new GetParameterCommand({
+                Name: entry.paramName,
+                WithDecryption: false,
+            }));
+
+        env[entry.envKey] = resp.Parameter.Value;
+    }
 };
