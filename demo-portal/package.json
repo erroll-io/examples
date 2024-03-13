@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.532.0",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vueuse/core": "^10.9.0",
     "pinia": "^2.1.7",

@@ -5,7 +5,7 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" style="transform: rotate(90deg);" />
 
     <div class="wrapper">
       <!-- <HelloWorld msg="You did it!" /> -->
@@ -47,7 +47,7 @@ nav a.router-link-exact-active:hover {
 }
 
 nav a {
-  display: inline-block;
+  display: block;
   padding: 0 1rem;
   border-left: 1px solid var(--color-border);
 }
@@ -68,9 +68,10 @@ nav a:first-of-type {
   }
 
   header .wrapper {
-    display: flex;
+    min-width: 200px;
+    /* display: flex;
     place-items: flex-start;
-    flex-wrap: wrap;
+    flex-wrap: wrap; */
   }
 
   nav {
