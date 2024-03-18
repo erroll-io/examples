@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -42,17 +44,17 @@ public static class UsersEndpoints
         return Results.Ok(user.ToResponse());
     }
 
+    //[Authorize]
     public static async Task<IResult> GetCurrentUser(
         [FromServices] IUsersService usersService,
-        [FromServices] IHttpContextAccessor httpContextAccessor,
-        // TODO: temporary until we wire up authn
-        [FromQuery] string sub = default,
-        [FromQuery] string username = default)
+        [FromServices] IHttpContextAccessor httpContextAccessor)
     {
-        var user = await usersService.GetCurrentUser(
-            ClaimsPrincipalLogic.GetFakeUser(username, sub));
+        var user = await usersService.GetCurrentUser(httpContextAccessor.HttpContext.User);
 
-        return Results.Ok(user.ToResponse());
+        return Results.Ok(user.ToResponse(
+            httpContextAccessor.HttpContext.User == default
+                ? default
+                : httpContextAccessor.HttpContext.User.Claims.ToDictionary(kv => kv.Type, kv => kv.Value)));
     }
 
     public static async Task<IResult> UpdateUser(
@@ -77,16 +79,12 @@ public static class UsersEndpoints
     }
 
     public static async Task<IResult> UpdateCurrentUser(
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         [FromServices] IUsersService usersService,
-        [FromBody] UserCreateRequest request,
-        // TODO: temporary until we wire up authn
-        [FromQuery] string sub = default,
-        [FromQuery] string username = default)
+        [FromBody] UserCreateRequest request)
     {
-        var user = ClaimsPrincipalLogic.GetFakeUser(username, sub);
-
         await usersService.UpdateCurrentUser(
-            user, 
+            httpContextAccessor.HttpContext.User, 
             new UserCreateParams()
             {
                 Language = request.Language,
@@ -96,16 +94,18 @@ public static class UsersEndpoints
         return Results.NoContent();
     }
 
-    private static UserResponse ToResponse(this User user)
+    private static UserResponse ToResponse(this User user, Dictionary<string, string> claims = default)
     {
         return new UserResponse()
         {
             Id = user.Id,
+            PrincipalId = user.PrincipalId,
             Language = user.Language,
             Timezone = user.Timezone,
             Metadata = user.Metadata,
             CreatedAt = user.CreatedAt,
-            ModifiedAt = user.ModifiedAt
+            ModifiedAt = user.ModifiedAt,
+            Claims = claims
         };
     }
 }

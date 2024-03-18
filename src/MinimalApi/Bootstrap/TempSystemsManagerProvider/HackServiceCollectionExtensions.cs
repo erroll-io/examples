@@ -2,7 +2,6 @@ using System;
 
 using Amazon.Extensions.Configuration.SystemsManager;
 using Amazon.Extensions.Configuration.SystemsManager.Internal;
-using Amazon.Extensions.NETCore.Setup;
 
 namespace Microsoft.Extensions.Configuration;
 
@@ -12,6 +11,8 @@ public static class ConfigurationBuilderExtensions
         this IConfigurationBuilder builder,
         string path)
     {
+        Console.WriteLine("Registering hacked SSM configuration source.");
+
         var source = new HackSystemsManagerConfigurationSource();
         source.Path = path;
 

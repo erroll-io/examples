@@ -11,6 +11,6 @@ public class HealthResponse
     public DateTime Then { get; set; }
 
     public string AwsAccountId { get; set; }
-    public IEnumerable<string> RedirectUrls { get; set; }
+    public IEnumerable<string> AllowedOrigins { get; set; }
     public string TestSecret { get; set; }
 }
