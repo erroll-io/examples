@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import SigninView from '../views/SigninView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import { useUserStore } from '../stores/userStore.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,8 +24,25 @@ const router = createRouter({
       path: '/signin',
       name: 'signin',
       component: SigninView
-    }
+    },
+    {
+      path: "/profile",
+      component: ProfileView,
+      beforeEnter: isAuthenticated,
+      meta: {
+        requiresAuth: true,
+      },
+      name: "Profile"
+    },
   ]
 })
+
+function isAuthenticated(to, from, next) {
+  if (useUserStore().id_token) {
+    next();
+  } else {
+    next("/signin");
+  }
+}
 
 export default router

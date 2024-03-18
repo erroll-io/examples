@@ -1,24 +1,62 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" style="transform: rotate(90deg);" />
+    <!-- <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" style="transform: rotate(90deg);" /> -->
 
-    <div class="wrapper">
-      <!-- <HelloWorld msg="You did it!" /> -->
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-        <RouterLink to="/signin">Sign In</RouterLink>
-      </nav>
-    </div>
+    <Suspense>
+      <div class="wrapper">
+        <nav>
+          <RouterLink to="/">Home</RouterLink>
+          <RouterLink to="/about">About</RouterLink>
+          <RouterLink v-if="!isAuthenticated" to="/signin">Sign In</RouterLink>
+          <RouterLink v-if="isAuthenticated" to="/profile">Profile</RouterLink>
+        </nav>
+      </div>
+      <template #fallback>
+        <div>Loading...</div>
+      </template>
+    </Suspense>
   </header>
 
-  <RouterView />
+  <Suspense>
+    <RouterView />
+
+    <template #fallback>
+      <div>Loading...</div>
+    </template>
+  </Suspense>
 </template>
+
+<script>
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useUserStore } from './stores/userStore.js'
+
+export default {
+  setup() {
+    const router = useRouter();
+    const userStore = useUserStore();
+
+    function logout() {
+      // TODO:
+      //store.dispatch("logout");
+
+      router.push({
+        name: "SignIn",
+        params: { message: "You have logged out" },
+      });
+    }
+
+    const isAuthenticated = computed(function() {
+      return userStore.id_token ? true : false;
+    });
+
+    return {
+      logout,
+      isAuthenticated,
+    };
+  },
+};
+</script>
 
 <style scoped>
 header {
