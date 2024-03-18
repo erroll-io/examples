@@ -1,5 +1,9 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
+export const minimalApiConfig = {
+    apiUrl: process.env.VUE_APP_MINIMAL_API_URL
+};
+
 export const googleConfig = {
     clientId: process.env.VUE_APP_GOOGLE_CLIENT_ID
 };

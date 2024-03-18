@@ -5,7 +5,7 @@ export default {
   setup() {
     const userStore = useUserStore();
 
-    const isAuthenticated = userStore.id_token;
+    const isAuthenticated = userStore.id_token ? true : false;
 
     return {
       isAuthenticated,
