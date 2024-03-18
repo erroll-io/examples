@@ -11,7 +11,7 @@ public static class HealthEndpoints
     public static async Task<IResult> GetHealth(
         [FromServices] IHttpContextAccessor contextAccessor,
         [FromServices] IOptions<AwsConfig> awsConfigOptions,
-        [FromServices] IOptions<OauthConfig> oauthConfigOptions,
+        [FromServices] IOptions<OAuthConfig> oauthConfigOptions,
         [FromQuery] string? echo)
     {
         return Results.Ok(new HealthResponse()
@@ -21,8 +21,7 @@ public static class HealthEndpoints
             Echo = echo,
 
             AwsAccountId = awsConfigOptions.Value.AccountId,
-            RedirectUrls = oauthConfigOptions.Value.RedirectUrls,
-            TestSecret = oauthConfigOptions.Value.TestSecret
+            AllowedOrigins = oauthConfigOptions.Value.AllowedOrigins
         });
     }
 
