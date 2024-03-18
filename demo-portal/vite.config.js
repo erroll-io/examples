@@ -11,8 +11,6 @@ export default defineConfig(async ({ command, mode }) => {
 
   await hydrateEnvFromSsm(env);
 
-  console.log("ENV: "+ JSON.stringify(env));
-
   return {
     define: {
       'process.env': JSON.stringify(env)
