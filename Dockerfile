@@ -23,9 +23,11 @@ RUN cd cedar-sharp && ~/.cargo/bin/cargo build
 COPY ./Examples.sln ./
 
 COPY ./src/MinimalApi/MinimalApi.csproj ./src/MinimalApi/
+COPY ./test/MinimalApi.Tests/MinimalApi.Tests.csproj ./test/MinimalApi.Tests/
 
 RUN dotnet restore -r ${RUNTIME}
 
 COPY ./src ./src
+COPY ./test ./test
 
 RUN dotnet publish src/MinimalApi/MinimalApi.csproj -c Release -r ${RUNTIME} -o publish --self-contained /p:EnableTrimAnalyzer=false
