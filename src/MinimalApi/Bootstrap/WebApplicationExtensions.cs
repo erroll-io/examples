@@ -10,7 +10,7 @@ public static class WebApplicationExtensions
     {
         return app
             .UseAuthentication()
-            .UseAuthorization()
+            //.UseAuthorization()
             .UseCors() as WebApplication;
     }
 

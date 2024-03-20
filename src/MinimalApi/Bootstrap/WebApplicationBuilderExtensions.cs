@@ -91,7 +91,7 @@ public static class WebApplicationBuilderExtensions
                         ValidateLifetime = true
                     };
                 });
-        builder.Services.AddAuthorization();
+        //builder.Services.AddAuthorization();
 
         builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 

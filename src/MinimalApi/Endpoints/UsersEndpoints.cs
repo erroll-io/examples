@@ -45,7 +45,7 @@ public static class UsersEndpoints
         return Results.Ok(user.ToResponse());
     }
 
-    [Authorize]
+    //[Authorize]
     public static async Task<IResult> GetCurrentUser(
         [FromServices] IUsersService usersService,
         [FromServices] IHttpContextAccessor httpContextAccessor)
