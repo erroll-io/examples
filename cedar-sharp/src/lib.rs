@@ -119,4 +119,17 @@ mod tests {
 
         assert_eq!(result, Decision::Allow);
     }
+
+    #[test]
+    fn can_deny_role_with_entities() {
+        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"lena.jpg");"#;
+        let principal: &str = r#"User::"Bob""#;
+        let action: &str = r#"Action::"view""#;
+        let resource: &str = r#"Photo::"lena.jpg""#;
+        let entities: &str = r#"[ { "uid": { "type": "User", "id": "Bob" }, "attrs": {}, "parents": [ { "type": "Role", "id": "photoSubmitters" }, { "type": "Role", "id": "juniorPhotoSubmitters" } ] }, { "uid": { "type": "Role", "id": "photoJudges" }, "attrs": {}, "parents": [] }, { "uid": { "type": "Role", "id": "juniorPhotoJudges" }, "attrs": {}, "parents": [] } ]"#;
+
+        let result = authorize(policy, principal, action, resource, "", entities);
+
+        assert_eq!(result, Decision::Deny);
+    }
 }
