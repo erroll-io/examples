@@ -8,8 +8,9 @@ public static class WebApplicationExtensions
 
     public static WebApplication ConfigureApplication(this WebApplication app)
     {
-        return app.UseAuthentication()
-            //.UseAuthorization()
+        return app
+            .UseAuthentication()
+            .UseAuthorization()
             .UseCors() as WebApplication;
     }
 
@@ -22,6 +23,7 @@ public static class WebApplicationExtensions
         app.MapGet("/users/current", UsersEndpoints.GetCurrentUser);
         app.MapPut("/users/{id}", UsersEndpoints.UpdateUser);
         app.MapPut("/users/current", UsersEndpoints.UpdateCurrentUser);
+        app.MapPost("/authorize", AuthorizationEndpoints.Authorize);
 
         return app;
     }

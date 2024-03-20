@@ -1,0 +1,4 @@
+[bindings.csharp]
+cdylib_name = "cedarsharp"
+namespace = "Erroll.CedarSharp"
+access_modifier = "public"
