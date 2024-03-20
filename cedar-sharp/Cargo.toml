@@ -1,0 +1,16 @@
+[package]
+name = "cedarsharp"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[dependencies]
+cedar-policy = "3.1.1"
+thiserror = "1.0"
+uniffi = { version = "0.25.3", features=["build"] }
+
+[build-dependencies]
+uniffi_build = "0.25.3"
+uniffi_bindgen = "0.25.3"

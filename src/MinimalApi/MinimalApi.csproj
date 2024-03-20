@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <PublishAot>true</PublishAot>
     <StripSymbols>true</StripSymbols>
@@ -18,6 +19,15 @@
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.300.29" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Condition="$([MSBuild]::IsOsPlatform('MacOS'))" Include="../../cedar-sharp/target/debug/libcedarsharp.dylib" CopyToOutputDirectory="PreserveNewest" />
+    <None Condition="$([MSBuild]::IsOsPlatform('Linux'))" Include="../../cedar-sharp/target/debug/libcedarsharp.so" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../cedar-sharp/bindings/cedarsharp.cs" Link="cedarsharp.cs" />
   </ItemGroup>
 
   <ItemGroup>

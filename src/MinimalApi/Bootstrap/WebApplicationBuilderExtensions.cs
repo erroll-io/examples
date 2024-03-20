@@ -93,6 +93,8 @@ public static class WebApplicationBuilderExtensions
                 });
         //builder.Services.AddAuthorization();
 
+        builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
+
         builder.Services.AddCors();
         builder.Services.AddOptions<CorsOptions>()
             .Configure<IOptions<OAuthConfig>>((options, oAuthConfigOptions) =>

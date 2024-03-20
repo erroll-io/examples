@@ -1,0 +1,14 @@
+namespace cedarsharp {
+    Decision authorize(
+        [ByRef] string policy,
+        [ByRef] string principal,
+        [ByRef] string action,
+        [ByRef] string resource,
+        [ByRef] string context_json,
+        [ByRef] string entities_json);
+};
+
+enum Decision {
+    "Allow",
+    "Deny"
+};

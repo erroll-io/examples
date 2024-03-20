@@ -10,9 +10,10 @@ docker build --platform linux/arm64 --progress=plain -t minimal-api .
 
 containerId=`docker run -t -d --rm minimal-api`
 docker container cp ${containerId}:/source/publish/MinimalApi .
+docker container cp ${containerId}:/source/cedar-sharp/target/debug/libcedarsharp.so .
 docker stop ${containerId}
 
-zip -r ${key} -j MinimalApi src/MinimalApi/appsettings.json
+zip -r ${key} -j MinimalApi src/MinimalApi/appsettings.json libcedarsharp.so
 
 rm -rf MinimalApi
 
