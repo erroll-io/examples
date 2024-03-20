@@ -1,21 +1,11 @@
-using Erroll.CedarSharp;
+using Microsoft.AspNetCore.Authorization;
+using MinimalApi.CedarSharp;
 
 namespace MinimalApi;
 
-public class AuthorizerResult
-{
-    public AuthorizerDecision Decision { get; set; }
-}
-
-public enum AuthorizerDecision
-{
-    Deny,
-    Allow
-}
-
 public interface IAuthorizer
 {
-    AuthorizerResult Authorize(
+    AuthorizationResult Authorize(
         string policy,
         string principal,
         string action,
@@ -26,7 +16,7 @@ public interface IAuthorizer
 
 public class CedarAuthorizer : IAuthorizer
 {
-    public AuthorizerResult Authorize(
+    public AuthorizationResult Authorize(
         string policy,
         string principal,
         string action,
@@ -36,11 +26,8 @@ public class CedarAuthorizer : IAuthorizer
     {
         var result = CedarsharpMethods.Authorize(policy, principal, action, resource, context ?? "", entities ?? "");
 
-        return new AuthorizerResult()
-        {
-            Decision = result == Decision.Allow
-                ? AuthorizerDecision.Allow
-                : AuthorizerDecision.Deny
-        };
+        return result == Decision.Allow
+            ? AuthorizationResult.Success()
+            : AuthorizationResult.Failed();
     }
 }

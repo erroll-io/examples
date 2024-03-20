@@ -11,7 +11,7 @@ pub fn authorize(
     entities: &str)
         -> Decision {
 
-    let policy_set: PolicySet = policy.parse().unwrap();
+    let policy_set = policy.parse().unwrap();
     let request = Request::new(
         Some(principal.parse().unwrap()), 
         Some(action.parse().unwrap()),
@@ -83,10 +83,10 @@ mod tests {
 
     #[test]
     fn can_allow_with_context() {
-        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"lena.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
+        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"update""#;
-        let resource: &str = r#"Photo::"lena.jpg""#;
+        let resource: &str = r#"Photo::"peppers.jpg""#;
         let context: &str = r#"{"mfa_authenticated": true, "request_client_ip": "42.42.42.42", "oidc_scope": "profile" }"#;
 
         let result = authorize(policy, principal, action, resource, context, "");
@@ -96,10 +96,10 @@ mod tests {
 
     #[test]
     fn can_deny_with_context() {
-        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"lena.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
+        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"update""#;
-        let resource: &str = r#"Photo::"lena.jpg""#;
+        let resource: &str = r#"Photo::"peppers.jpg""#;
         let context: &str = r#"{"mfa_authenticated": true, "request_client_ip": "23.23.23.23", "oidc_scope": "profile" }"#;
 
         let result = authorize(policy, principal, action, resource, context, "");
@@ -109,10 +109,10 @@ mod tests {
 
     #[test]
     fn can_allow_role_with_entities() {
-        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"lena.jpg");"#;
+        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#;
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"view""#;
-        let resource: &str = r#"Photo::"lena.jpg""#;
+        let resource: &str = r#"Photo::"peppers.jpg""#;
         let entities: &str = r#"[ { "uid": { "type": "User", "id": "Bob" }, "attrs": {}, "parents": [ { "type": "Role", "id": "photoJudges" }, { "type": "Role", "id": "juniorPhotoJudges" } ] }, { "uid": { "type": "Role", "id": "photoJudges" }, "attrs": {}, "parents": [] }, { "uid": { "type": "Role", "id": "juniorPhotoJudges" }, "attrs": {}, "parents": [] } ]"#;
 
         let result = authorize(policy, principal, action, resource, "", entities);
@@ -122,10 +122,10 @@ mod tests {
 
     #[test]
     fn can_deny_role_with_entities() {
-        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"lena.jpg");"#;
+        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#;
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"view""#;
-        let resource: &str = r#"Photo::"lena.jpg""#;
+        let resource: &str = r#"Photo::"peppers.jpg""#;
         let entities: &str = r#"[ { "uid": { "type": "User", "id": "Bob" }, "attrs": {}, "parents": [ { "type": "Role", "id": "photoSubmitters" }, { "type": "Role", "id": "juniorPhotoSubmitters" } ] }, { "uid": { "type": "Role", "id": "photoJudges" }, "attrs": {}, "parents": [] }, { "uid": { "type": "Role", "id": "juniorPhotoJudges" }, "attrs": {}, "parents": [] } ]"#;
 
         let result = authorize(policy, principal, action, resource, "", entities);

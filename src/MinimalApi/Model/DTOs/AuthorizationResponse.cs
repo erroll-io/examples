@@ -2,5 +2,5 @@ namespace MinimalApi;
 
 public class AuthorizationResponse
 {
-    public string Decision { get; set; }
+    public bool IsAllowed { get; set; }
 }

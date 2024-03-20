@@ -22,7 +22,7 @@ public static class AuthorizationEndpoints
 
         return Results.Ok(new AuthorizationResponse()
         {
-            Decision = result.Decision.ToString()
+            IsAllowed = result.Succeeded
         });
     }
 }
