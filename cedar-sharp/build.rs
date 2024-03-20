@@ -26,4 +26,5 @@ fn main() {
         .arg(udl_file)
         .output()
         .expect("Failed when generating C# bindings");
+
 }

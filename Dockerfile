@@ -1,5 +1,5 @@
 ARG PLATFORM=linux/arm64
-# TODO: figure out why x64 causes L21 to hang
+# TODO: figure out why x64 causes L27 to hang
 #ARG PLATFORM=linux/amd64
 
 FROM --platform=${PLATFORM} mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -19,9 +19,6 @@ RUN ~/.cargo/bin/cargo install uniffi-bindgen-cs --git https://github.com/NordSe
 
 COPY ./cedar-sharp ./cedar-sharp
 RUN cd cedar-sharp && ~/.cargo/bin/cargo build
-
-# TODO: fix lib versioning issue
-RUN find cedar-sharp/bindings/ -iregex '.*cedarsharp.cs' -exec sed -i.bak 's/24 != scaffolding_contract_version/25 != scaffolding_contract_version/g' {} \;
 
 COPY ./Examples.sln ./
 

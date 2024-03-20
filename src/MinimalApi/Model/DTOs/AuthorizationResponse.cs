@@ -2,5 +2,5 @@ namespace MinimalApi;
 
 public class AuthorizationResponse
 {
-    public string Result { get; set; }
+    public string Decision { get; set; }
 }

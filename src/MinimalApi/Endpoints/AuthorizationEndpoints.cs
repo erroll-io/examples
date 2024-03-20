@@ -16,12 +16,13 @@ public static class AuthorizationEndpoints
             request.Policy,
             request.Principal,
             request.Action,
-            request.Resource);
+            request.Resource,
+            request.Context,
+            request.Entities);
 
         return Results.Ok(new AuthorizationResponse()
         {
-            Result = result.ToString()
+            Decision = result.Decision.ToString()
         });
     }
-
 }

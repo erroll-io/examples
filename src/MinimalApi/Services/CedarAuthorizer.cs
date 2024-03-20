@@ -2,7 +2,12 @@ using Erroll.CedarSharp;
 
 namespace MinimalApi;
 
-public enum AuthorizerResult
+public class AuthorizerResult
+{
+    public AuthorizerDecision Decision { get; set; }
+}
+
+public enum AuthorizerDecision
 {
     Deny,
     Allow
@@ -29,8 +34,13 @@ public class CedarAuthorizer : IAuthorizer
         string context = "",
         string entities = "")
     {
-        return CedarsharpMethods.Authorize(policy, principal, action, resource, context, entities) == "ALLOW"
-            ? AuthorizerResult.Allow
-            : AuthorizerResult.Deny;
+        var result = CedarsharpMethods.Authorize(policy, principal, action, resource, context ?? "", entities ?? "");
+
+        return new AuthorizerResult()
+        {
+            Decision = result == Decision.Allow
+                ? AuthorizerDecision.Allow
+                : AuthorizerDecision.Deny
+        };
     }
 }
