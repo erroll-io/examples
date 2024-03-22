@@ -14,6 +14,17 @@ namespace MinimalApi;
 [JsonSerializable(typeof(UserResponse))]
 [JsonSerializable(typeof(AuthorizationRequest))]
 [JsonSerializable(typeof(AuthorizationResponse))]
+
+[JsonSerializable(typeof(Permission))]
+[JsonSerializable(typeof(Role))]
+[JsonSerializable(typeof(RolePermission))]
+[JsonSerializable(typeof(UserRole))]
+[JsonSerializable(typeof(User))]
+
+#if DEBUG
+[JsonSerializable(typeof(SeedData))]
+[JsonSerializable(typeof(SeedRole))]
+#endif
 public partial class MinimalApiJsonSerializerContext : JsonSerializerContext
 {
 }

@@ -133,6 +133,10 @@ public static class WebApplicationBuilderExtensions
                 });
         }
 
+#if DEBUG
+        builder.Services.AddSingleton<DynamoSeeder>();
+#endif
+
         return builder;
     }
 
@@ -145,6 +149,10 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddSingleton<IHasher, Hasher>();
         builder.Services.AddScoped<IUsersService, UsersService>();
+        builder.Services.AddScoped<IProjectService, ProjectService>();
+        builder.Services.AddScoped<IPermissionService, PermissionService>();
+        builder.Services.AddScoped<IRoleService, RoleService>();
+        builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 
         return builder;
     }
