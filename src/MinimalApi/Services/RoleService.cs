@@ -109,7 +109,6 @@ public class RoleService : IRoleService
             new QueryRequest()
             {
                 TableName = _dynamoConfig.RolePermissionsTableName,
-                //IndexName = _dynamoConfig.PermissionsTableRoleIndexName,
                 KeyConditions = new Dictionary<string, Condition>()
                 {
                     ["role_id"] = new Condition()

@@ -6,6 +6,7 @@ using System.Text.Json;
 
 using Amazon.DynamoDBv2;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -91,7 +92,7 @@ public static class WebApplicationBuilderExtensions
                         ValidateLifetime = true
                     };
                 });
-        //builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization();
 
         builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 
@@ -109,8 +110,8 @@ public static class WebApplicationBuilderExtensions
                     });
             });
 
-        //builder.Services.AddTransient<IClaimsTransformation, FakeClaimsTransformation>();
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        builder.Services.AddTransient<IClaimsTransformation, LocalAuthClaimsTransformation>();
 
         if (builder.Environment.IsEnvironment("Local"))
         {
@@ -148,7 +149,7 @@ public static class WebApplicationBuilderExtensions
         //builder.Services.AddAWSService<IAmazonDynamoDB>();
 
         builder.Services.AddSingleton<IHasher, Hasher>();
-        builder.Services.AddScoped<IUsersService, UsersService>();
+        builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();

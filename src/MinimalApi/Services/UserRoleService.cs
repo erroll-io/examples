@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-
 using Microsoft.Extensions.Options;
-using System.Data;
 
 namespace MinimalApi.Services;
 
@@ -70,42 +67,6 @@ public class UserRoleService : IUserRoleService
 
         return response.Items.Select(ToUserRole);
     }
-
-    //public async Task<UserRole> GetUserRoleByUserIdRoleId(string userId, string roleId)
-    //{
-    //    var response = await _dynamoClient.QueryAsync(
-    //        new QueryRequest()
-    //        {
-    //            TableName = _dynamoConfig.UserRolesTableName,
-    //            //IndexName = "index_user_id_role_id",
-    //            KeyConditions = new Dictionary<string, Condition>()
-    //            {
-    //                ["user_id"] = new Condition()
-    //                {
-    //                    ComparisonOperator = ComparisonOperator.EQ,
-    //                    AttributeValueList = new List<AttributeValue>()
-    //                    {
-    //                        new AttributeValue(userId)
-    //                    }
-    //                },
-    //                ["role_id"] = new Condition()
-    //                {
-    //                    ComparisonOperator = ComparisonOperator.EQ,
-    //                    AttributeValueList = new List<AttributeValue>()
-    //                    {
-    //                        new AttributeValue(roleId)
-    //                    }
-    //                }
-    //            }
-    //        });
-
-    //    if (response.Items == default || !response.Items.Any())
-    //    {
-    //        return default;
-    //    }
-
-    //    return ToUserRole(response.Items.SingleOrDefault());
-    //}
 
     public async Task<UserRole> SaveUserRole(UserRole userRole)
     {

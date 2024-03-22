@@ -12,6 +12,8 @@ namespace MinimalApi;
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(UserCreateRequest))]
 [JsonSerializable(typeof(UserResponse))]
+[JsonSerializable(typeof(ProjectResponse))]
+[JsonSerializable(typeof(ProjectsResponse))]
 [JsonSerializable(typeof(AuthorizationRequest))]
 [JsonSerializable(typeof(AuthorizationResponse))]
 

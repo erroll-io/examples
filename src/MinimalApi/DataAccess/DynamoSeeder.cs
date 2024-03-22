@@ -19,14 +19,14 @@ public class DynamoSeeder
     private readonly IRoleService _roleService;
     private readonly IPermissionService _permissionService;
     private readonly IUserRoleService _userRoleService;
-    private readonly IUsersService _usersService;
+    private readonly IUserService _usersService;
 
     public DynamoSeeder(
         IProjectService projectService,
         IRoleService roleService,
         IPermissionService permissionService,
         IUserRoleService userRoleService,
-        IUsersService usersService)
+        IUserService usersService)
     {
         _projectService = projectService;
         _roleService = roleService;

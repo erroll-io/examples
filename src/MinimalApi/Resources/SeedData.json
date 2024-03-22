@@ -20,7 +20,6 @@
             "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95"
         },
         {
-            "note": "this ID would otherwise be a GUID.",
             "id": "GUID-earl-vcf",
             "projectId": "vcf-filtering",
             "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95"
@@ -45,16 +44,6 @@
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::CreateUserData" },
                 { "permissionId": "MinimalApi::Action::CreateProject" }
-            ]
-        },
-        {
-            "id": "MinimalApi::Role::DataOwner",
-            "name": "An owner of app data.",
-            "description": "Assigned upon data creation.",
-            "rolePermissions": [
-                { "permissionId": "MinimalApi::Action::ReadData" },
-                { "permissionId": "MinimalApi::Action::UpdateData" },
-                { "permissionId": "MinimalApi::Action::DeleteData" }
             ]
         },
         {
@@ -85,6 +74,16 @@
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::ReadProject" }
             ]
+        },
+        {
+            "id": "MinimalApi::Role::DataOwner",
+            "name": "An owner of app data.",
+            "description": "Assigned upon data creation.",
+            "rolePermissions": [
+                { "permissionId": "MinimalApi::Action::ReadData" },
+                { "permissionId": "MinimalApi::Action::UpdateData" },
+                { "permissionId": "MinimalApi::Action::DeleteData" }
+            ]
         }
     ],
     "users": [
@@ -95,34 +94,46 @@
     ],
     "userRoles": [
         {
+            "id": "GUID-earl-google-lfi-project-admin",
+            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
+            "roleId": "MinimalApi::Role::ProjectAdmin",
+            "condition": "Project::GUID-large-file-ingestion"
+        },
+        {
+            "id": "GUID-earl-google-vcf-project-admin",
+            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
+            "roleId": "MinimalApi::Role::ProjectAdmin",
+            "condition": "Project::GUID-vcf-filtering"
+        },
+        {
             "id": "GUID-earl-lfi-project-admin",
             "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
             "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project:GUID-large-file-ingestion"
+            "condition": "Project::GUID-large-file-ingestion"
         },
         {
             "id": "GUID-earl-vcf-project-admin",
             "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
             "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project:GUID-vcf-filtering"
+            "condition": "Project::GUID-vcf-filtering"
         },
         {
             "id": "GUID-earl-vcf-project-admin",
             "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
             "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project:GUID-vcf-filtering"
+            "condition": "Project::GUID-vcf-filtering"
         },
         {
             "id": "GUID-demo-lfi-project-collaborator",
             "userId": "42424242-4242-4242-4242-424242424242",
             "roleId": "MinimalApi::Role::ProjectCollaborator",
-            "condition": "Project:GUID-large-file-ingestion"
+            "condition": "Project::GUID-large-file-ingestion"
         },
         {
             "id": "GUID-demo-vcf-project-viewer",
             "userId": "42424242-4242-4242-4242-424242424242",
             "roleId": "MinimalApi::Role::ProjectViewer",
-            "condition": "Project:GUID-vcf-filtering"
+            "condition": "Project::GUID-vcf-filtering"
         }
     ]
 }

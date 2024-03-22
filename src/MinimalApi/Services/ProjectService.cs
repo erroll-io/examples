@@ -13,6 +13,7 @@ namespace MinimalApi.Services;
 public interface IProjectService
 {
     Task<Project> GetProject(string projectId);
+    Task<IEnumerable<Project>> GetProjects(IEnumerable<string> projectIds);
     Task<Project> SaveProject(Project project);
     Task<ProjectUser> GetProjectUser(string projectUserId);
     Task<ProjectUser> GetProjectUser(string projectId, string userId);
@@ -40,6 +41,30 @@ public class ProjectService : IProjectService
             });
 
         return ToProject(project.Item);
+    }
+
+    // TODO: pagination
+    public async Task<IEnumerable<Project>> GetProjects(IEnumerable<string> projectIds)
+    {
+        var projects = await _dynamoClient.BatchGetItemAsync(
+            new BatchGetItemRequest()
+            {
+                RequestItems  = new Dictionary<string, KeysAndAttributes>()
+                {
+                    [_dynamoConfig.ProjectsTableName] = new KeysAndAttributes()
+                    {
+                        Keys = projectIds.Select(projectId =>
+                            new Dictionary<string, AttributeValue>()
+                            {
+                                ["id"] = new AttributeValue(projectId)
+                            }).ToList()
+                    }
+                }
+            });
+
+        return projects.Responses
+            .SelectMany(response => response.Value)
+            .Select(response => ToProject(response));
     }
 
     public async Task<Project> SaveProject(Project project)

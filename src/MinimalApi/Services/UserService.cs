@@ -11,7 +11,7 @@ using Amazon.DynamoDBv2.Model;
 
 namespace MinimalApi.Services;
 
-public interface IUsersService
+public interface IUserService
 {
     Task<User> CreateUser(UserCreateParams userCreateParams);
     Task<User> GetUser(string id);
@@ -21,15 +21,15 @@ public interface IUsersService
     Task UpdateCurrentUser(ClaimsPrincipal principal, UserCreateParams updateParams);
 }
 
-public class UsersService : IUsersService
+public class UserService : IUserService
 {
     private readonly ILogger _logger;
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly IHasher _hasher;
     private readonly DynamoConfig _dynamoConfig;
 
-    public UsersService(
-        ILogger<UsersService> logger,
+    public UserService(
+        ILogger<UserService> logger,
         IAmazonDynamoDB dynamoClient,
         IHasher hasher,
         IOptions<DynamoConfig> dynamoConfigOptions)
