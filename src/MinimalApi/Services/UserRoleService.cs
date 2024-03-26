@@ -14,6 +14,10 @@ public interface IUserRoleService
 {
     Task<UserRole> GetUserRole(string userRoleId);
     Task<IEnumerable<UserRole>> GetUserRolesByUserId(string userId);
+    Task<IEnumerable<UserRole>> GetUserRolesByRoleAndCondition(
+        string roleId,
+        string condition,
+        string roleComparisonOperator = null);
     Task<UserRole> SaveUserRole(UserRole userRole);
 }
 
@@ -58,6 +62,48 @@ public class UserRoleService : IUserRoleService
                         }
                     }
                 }
+            });
+
+        if (response.Items == default || !response.Items.Any())
+        {
+            return default;
+        }
+
+        return response.Items.Select(ToUserRole);
+    }
+
+    public async Task<IEnumerable<UserRole>> GetUserRolesByRoleAndCondition(
+        string role,
+        string condition,
+        string roleComparisonOperator = null)
+    {
+        var response = await _dynamoClient.QueryAsync(
+            new QueryRequest()
+            {
+                TableName = _dynamoConfig.UserRolesTableName,
+                IndexName = _dynamoConfig.UserRolesTableRoleConditionIndexName,
+                KeyConditions = new Dictionary<string, Condition>()
+                {
+                    ["role_id"] = new Condition()
+                    {
+                        ComparisonOperator = string.IsNullOrEmpty(roleComparisonOperator)
+                            ? ComparisonOperator.EQ
+                            : ComparisonOperator.FindValue(roleComparisonOperator),
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(role)
+                        }
+                    },
+                    ["condition"] = new Condition()
+                    {
+                        ComparisonOperator = ComparisonOperator.EQ,
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(condition)
+                        }
+                    }
+                },
+                ProjectionExpression = "user_id, role_id"
             });
 
         if (response.Items == default || !response.Items.Any())

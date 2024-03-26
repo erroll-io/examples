@@ -16,37 +16,42 @@ public static class ProjectsEndpoints
         [FromServices] IHttpContextAccessor httpContextAccessor,
         [FromServices] IProjectService projectService)
     {
-        var projectIds = httpContextAccessor.HttpContext.User.GetResourceIdsForPermission(
-            "MinimalApi::Action::ReadProject",
-            "Project");
+        var projectsResult = await projectService.GetProjects(httpContextAccessor.HttpContext.User);
 
-        var projects = await projectService.GetProjects(projectIds);
-
-        return Results.Ok(new ProjectsResponse()
-        {
-            Projects = projects.Select(ToResponse)
-        });
+        return projectsResult.FromServiceResult(projects =>
+            new ProjectsResponse()
+            {
+                Projects = projects.Select(ToResponse)
+            });
     }
 
     [Authorize]
     public static async Task<IResult> GetProject(
         [FromServices] IHttpContextAccessor httpContextAccessor,
         [FromServices] IProjectService projectService,
-        string id)
+        string projectId)
     {
-        if (!httpContextAccessor.HttpContext.User.HasPermission(
-            "MinimalApi::Action::ReadProject",
-            $"Project::{id}"))
-        {
-            return Results.Forbid();
-        }
+        if (string.IsNullOrEmpty(projectId))
+            return Results.BadRequest(nameof(projectId));
 
-        if (string.IsNullOrEmpty(id))
-            return Results.BadRequest(nameof(id));
+        var projectResult = await projectService.GetProject(httpContextAccessor.HttpContext.User, projectId);
 
-        var project = await projectService.GetProject(id);
+        return projectResult.FromServiceResult(ToResponse);
+    }
 
-        return Results.Ok(project.ToResponse());
+    [Authorize]
+    public static async Task<IResult> GetProjectUsers(
+        [FromServices] IHttpContextAccessor httpContextAccessor,
+        [FromServices] IProjectService projectService,
+        string projectId)
+    {
+        if (string.IsNullOrEmpty(projectId))
+            return Results.BadRequest(nameof(projectId));
+
+        var projectUsersResult = await projectService.GetProjectUsers(httpContextAccessor.HttpContext.User, projectId);
+
+        return projectUsersResult.FromServiceResult(projectUsers =>
+            projectUsers.Select(ToResponse));
     }
 
     public static ProjectResponse ToResponse(this Project project)
@@ -59,6 +64,16 @@ public static class ProjectsEndpoints
             DataPath = project.DataPath,
             CreatedAt = project.CreatedAt,
             ModifiedAt = project.ModifiedAt
+        };
+    }
+
+    public static ProjectUserResponse ToResponse(this ProjectUser projectUser)
+    {
+        return new ProjectUserResponse()
+        {
+            UserId = projectUser.UserId,
+            UserName = projectUser.UserName,
+            Role = projectUser.Role
         };
     }
 }

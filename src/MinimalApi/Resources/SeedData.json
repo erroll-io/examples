@@ -13,18 +13,6 @@
             "dataPath": "s3://minimal-api.erroll.io/projects/vcf-filtering"
         }
     ],
-    "projectUsers": [
-        {
-            "id": "GUID-earl-lfi",
-            "projectId": "large-file-ingestion",
-            "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95"
-        },
-        {
-            "id": "GUID-earl-vcf",
-            "projectId": "vcf-filtering",
-            "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95"
-        }
-    ],
     "permissions": [
         { "id": "MinimalApi::Action::CreateProject" },
         { "id": "MinimalApi::Action::ReadProject" },
@@ -43,6 +31,7 @@
             "description": "Any demo.erroll.io user.",
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::CreateUserData" },
+                { "permissionId": "MinimalApi::Action::ReadUserData" },
                 { "permissionId": "MinimalApi::Action::CreateProject" }
             ]
         },
@@ -54,7 +43,14 @@
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::UpdateProject" },
                 { "permissionId": "MinimalApi::Action::DeleteProject" },
-                { "permissionId": "MinimalApi::Action::CreateProjectData" }
+                { "permissionId": "MinimalApi::Action::CreateProjectData" },
+                { "permissionId": "MinimalApi::Action::ReadProjectData" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectData" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectData" },
+                { "permissionId": "MinimalApi::Action::CreateProjectResults" },
+                { "permissionId": "MinimalApi::Action::ReadProjectResults" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectResults" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectResults" }
             ]
         },
         {
@@ -64,7 +60,14 @@
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::UpdateProject" },
-                { "permissionId": "MinimalApi::Action::CreateProjectData" }
+                { "permissionId": "MinimalApi::Action::CreateProjectData" },
+                { "permissionId": "MinimalApi::Action::ReadProjectData" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectData" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectData" },
+                { "permissionId": "MinimalApi::Action::CreateProjectResults" },
+                { "permissionId": "MinimalApi::Action::ReadProjectResults" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectResults" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectResults" }
             ]
         },
         {
@@ -72,7 +75,8 @@
             "name": "Project Viewer.",
             "description": "A user that can view project data.",
             "rolePermissions": [
-                { "permissionId": "MinimalApi::Action::ReadProject" }
+                { "permissionId": "MinimalApi::Action::ReadProject" },
+                { "permissionId": "MinimalApi::Action::ReadProjectResults" }
             ]
         },
         {
@@ -93,6 +97,12 @@
         }
     ],
     "userRoles": [
+        {
+            "id": "GUID-earl-google-user",
+            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
+            "roleId": "MinimalApi::Role::AppUser",
+            "condition": "User::39cc99d8-3cb7-4f7b-8ea3-af825fa20751"
+        },
         {
             "id": "GUID-earl-google-lfi-project-admin",
             "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",

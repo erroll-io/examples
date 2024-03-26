@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 using Amazon.Lambda.Core;
@@ -14,6 +15,12 @@ namespace MinimalApi;
 [JsonSerializable(typeof(UserResponse))]
 [JsonSerializable(typeof(ProjectResponse))]
 [JsonSerializable(typeof(ProjectsResponse))]
+[JsonSerializable(typeof(ProjectUserResponse))]
+[JsonSerializable(typeof(IEnumerable<ProjectUserResponse>))]
+[JsonSerializable(typeof(DataRecordRequest))]
+[JsonSerializable(typeof(DataRecordResponse))]
+[JsonSerializable(typeof(IEnumerable<DataRecordResponse>))]
+[JsonSerializable(typeof(DataResponse))]
 [JsonSerializable(typeof(AuthorizationRequest))]
 [JsonSerializable(typeof(AuthorizationResponse))]
 

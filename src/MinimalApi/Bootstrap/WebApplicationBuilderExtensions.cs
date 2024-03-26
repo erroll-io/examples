@@ -111,7 +111,8 @@ public static class WebApplicationBuilderExtensions
             });
 
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        builder.Services.AddTransient<IClaimsTransformation, LocalAuthClaimsTransformation>();
+        builder.Services.AddTransient<IClaimsTransformation, AuthClaimsTransformation>();
+        builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
 
         if (builder.Environment.IsEnvironment("Local"))
         {
@@ -154,6 +155,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+        builder.Services.AddScoped<IDataService, DataService>();
 
         return builder;
     }

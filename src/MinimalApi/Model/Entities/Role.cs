@@ -31,3 +31,13 @@ public class UserRole
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
 }
+
+public class AuthRecord
+{
+    public string PK { get; set; }
+    public string RK { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime ModifiedAt { get; set; }
+}

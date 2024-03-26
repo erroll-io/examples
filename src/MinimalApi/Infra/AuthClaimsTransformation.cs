@@ -10,25 +10,22 @@ using MinimalApi.Services;
 
 namespace MinimalApi;
 
-public class LocalAuthClaimsTransformation : IClaimsTransformation
+public class AuthClaimsTransformation : IClaimsTransformation
 {
     private readonly ILogger _logger;
     private readonly IUserService _userService;
-    private readonly IRoleService _roleService;
-    private readonly IUserRoleService _userRoleService;
+    private readonly IAuthClaimsService _authClaimsService;
 
     private bool _isHandled = false;
 
-    public LocalAuthClaimsTransformation(
-        ILogger<LocalAuthClaimsTransformation> logger,
+    public AuthClaimsTransformation(
+        ILogger<AuthClaimsTransformation> logger,
         IUserService userService,
-        IRoleService roleService,
-        IUserRoleService userRoleService)
+        IAuthClaimsService authClaimsService)
     {
         _logger = logger;
         _userService = userService;
-        _roleService = roleService;
-        _userRoleService = userRoleService;
+        _authClaimsService = authClaimsService;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -40,9 +37,7 @@ public class LocalAuthClaimsTransformation : IClaimsTransformation
 
         // we'll grab claims from our own store, but they could alternatively
         // be coming from a different service (our own, or third-party)
-        var principalClaims = (await GetLocalClaims(principal)).ToList();
-
-        // TODO: claims caching
+        var principalClaims = (await _authClaimsService.GetUserClaims(principal)).ToList();
 
         if (principalClaims != default && principalClaims.Any())
         {
@@ -57,24 +52,5 @@ public class LocalAuthClaimsTransformation : IClaimsTransformation
         _isHandled = true;
 
         return principal;
-    }
-
-    private async Task<IEnumerable<Claim>> GetLocalClaims(ClaimsPrincipal principal)
-    {
-        var user = await _userService.GetCurrentUser(principal);
-
-        var userRoles = await _userRoleService.GetUserRolesByUserId(user.Id);
-
-        var tasks = userRoles.Select(async (userRole) => 
-        {
-            var rolePermissions = await _roleService.GetRolePermissions(userRole.RoleId);
-
-            return rolePermissions.Select(permission =>
-                new Claim("permission", $"{permission.PermissionId}:{userRole.Condition}"));
-        });
-
-        var results = await Task.WhenAll(tasks);
-
-        return results.SelectMany(r => r);
     }
 }
