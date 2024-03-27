@@ -163,7 +163,7 @@ public class DataService : IDataService
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
         }
 
-        var dataRecordIds = principal.GetResourceIdsForPermission(
+        var dataRecordIds = principal.GetResourceIdsForPermissionCondition(
             "MinimalApi::Action::ReadData",
             "DataRecord");
 
@@ -205,7 +205,7 @@ public class DataService : IDataService
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
         }
 
-        var userProjectIds = principal.GetResourceIdsForPermission(
+        var userProjectIds = principal.GetResourceIdsForPermissionCondition(
             "MinimalApi::Action::ReadProjectData",
             "Project");
 
@@ -290,11 +290,6 @@ public class DataService : IDataService
 
         item["size"] = new AttributeValue() { N = dataRecord.Size.ToString() };
 
-        //if (string.IsNullOrEmpty(dataRecord.CreatedBy))
-        //    throw new Exception("Missing creator.");
-
-        //item["created_by"] = new AttributeValue(dataRecord.CreatedBy);
-
         if (dataRecord.CreatedAt == default)
             throw new Exception("Missing CreatedAt.");
 
@@ -362,7 +357,6 @@ public class DataService : IDataService
             FileName = item.ContainsKey("file_name") ? item["file_name"].S : default,
             Location = item.ContainsKey("location") ? item["location"].S : default,
             Size = item.ContainsKey("size") ? ulong.Parse(item["size"].N) : default,
-            //CreatedBy = item.ContainsKey("created_by") ? item["created_by"].S : default,
             Metadata = item.ContainsKey("metadata") ? item["metadata"].S : default,
             CreatedAt = item.ContainsKey("created_at") ? DateTime.Parse(item["created_at"].S) : default,
             ModifiedAt = item.ContainsKey("modified_at") ? DateTime.Parse(item["modified_at"].S) : default

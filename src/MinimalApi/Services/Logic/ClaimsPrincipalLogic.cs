@@ -40,14 +40,14 @@ public static class ClaimsPrincipalLogic
                 && claim.Value == $"{permissionId}:{condition}");
     }
 
-    public static IEnumerable<string> GetResourceIdsForPermission(
+    public static IEnumerable<string> GetResourceIdsForPermissionCondition(
         this ClaimsPrincipal user,
         string permissionId,
-        string resourceType)
+        string conditionKey)
     {
         return user.Claims
             .Where(claim => claim.Type == "permission"
-                && claim.Value.StartsWith($"{permissionId}:{resourceType}"))
+                && claim.Value.StartsWith($"{permissionId}:{conditionKey}"))
             .Select(claim => claim.Value.Substring(claim.Value.LastIndexOf("::") + "::".Length));
     }
 }

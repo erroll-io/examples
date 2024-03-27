@@ -64,7 +64,7 @@ public class ProjectService : IProjectService
     // TODO: pagination
     public async Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal)
     {
-        var projectIds = principal.GetResourceIdsForPermission(
+        var projectIds = principal.GetResourceIdsForPermissionCondition(
             "MinimalApi::Action::ReadProject",
             "Project");
 
