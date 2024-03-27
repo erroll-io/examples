@@ -63,13 +63,6 @@ public static class DataEndpoints
             return Results.BadRequest(nameof(request.FileName));
         if (!request.Size.HasValue)
             return Results.BadRequest(nameof(request.Size));
-            
-        if (!httpContextAccessor.HttpContext.User.HasPermission(
-            "MinimalApi::Action::CreateProjectData",
-            $"Project::{projectId}"))
-        {
-            return Results.Forbid();
-        }
 
         var projectDataResult = await dataService.CreateProjectData(
             httpContextAccessor.HttpContext.User,
@@ -113,7 +106,10 @@ public static class DataEndpoints
             return Results.Forbid();
         }
 
-        var dataRecordResult = await dataService.FinalizeDataUpload(httpContextAccessor.HttpContext.User, dataRecordId);
+        var dataRecordResult = await dataService.FinalizeDataUpload(
+            httpContextAccessor.HttpContext.User,
+            dataRecordId,
+            request.Parts);
 
         return dataRecordResult.FromServiceResult(dataRecord =>
             Results.NoContent());
@@ -164,7 +160,6 @@ public static class DataEndpoints
             FileName = dataRecord.FileName,
             Location = dataRecord.Location,
             Size = dataRecord.Size,
-            CreatedBy = dataRecord.CreatedBy,
             Metadata = dataRecord.Metadata,
             CreatedAt = dataRecord.CreatedAt,
             ModifiedAt = dataRecord.ModifiedAt

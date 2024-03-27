@@ -29,12 +29,6 @@
   <ItemGroup>
     <Compile Include="../../cedar-sharp/bindings/cedarsharp.cs" Link="cedarsharp.cs" />
   </ItemGroup>
-<!-- 
-  <ItemGroup>
-    <Content Include="Resources/SeedData.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup> -->
 
   <ItemGroup>
     <TrimmerRootAssembly Include="Amazon.Lambda.AspNetCoreServer.Hosting" />

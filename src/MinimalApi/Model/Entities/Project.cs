@@ -14,16 +14,6 @@ public class Project
     public DateTime? DeletedAt { get; set; }
 }
 
-//public class ProjectUser
-//{
-//    public string Id { get; set; }
-//    public string ProjectId { get; set; }
-//    public string UserId { get; set; }
-//    public DateTime CreatedAt { get; set; }
-//    public DateTime ModifiedAt { get; set; }
-//    public DateTime? DeletedAt { get; set; }
-//}
-
 public class DataType
 {
     public string Id { get; set; }
@@ -39,22 +29,12 @@ public class DataRecord
     public string FileName { get; set; }
     public string Location { get; set; }
     public ulong Size { get; set; }
-    public string CreatedBy { get; set; }
     public string Metadata { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public DateTime? ValidatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
 }
-
-//public class UserData
-//{
-//    public string UserId { get; set; }
-//    public string DataRecordId { get; set; }
-//    public DateTime CreatedAt { get; set; }
-//    public DateTime ModifiedAt { get; set; }
-//    public DateTime? DeletedAt { get; set; }
-//}
 
 public class ProjectData
 {

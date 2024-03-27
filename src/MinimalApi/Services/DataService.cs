@@ -20,7 +20,10 @@ public interface IDataService
         ClaimsPrincipal principal,
         string projectId,
         DataRecordParams dataRecordParams);
-    Task<ServiceResult<DataRecord>> FinalizeDataUpload(ClaimsPrincipal principal, string dataRecordId);
+    Task<ServiceResult<DataRecord>> FinalizeDataUpload(
+        ClaimsPrincipal principal,
+        string dataRecordId,
+        IEnumerable<string> partTags);
     Task<ServiceResult<DataRecord>> GetDataRecord(ClaimsPrincipal principal, string dataRecordId);
     Task<ServiceResult<IEnumerable<DataRecord>>> GetUserData(ClaimsPrincipal principal);
     Task<ServiceResult<IEnumerable<DataRecord>>> GetProjectData(ClaimsPrincipal principal, string projectId);
@@ -69,7 +72,7 @@ public class DataService : IDataService
                 Location = $"s3://TODO",
                 FileName = dataRecordParams.FileName,
                 Size = dataRecordParams.Size,
-                CreatedBy = $"User::{user.Id}",
+                //CreatedBy = $"User::{user.Id}",
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -120,7 +123,10 @@ public class DataService : IDataService
         }
     }
 
-    public Task<ServiceResult<DataRecord>> FinalizeDataUpload(ClaimsPrincipal principal, string dataRecordId)
+    public Task<ServiceResult<DataRecord>> FinalizeDataUpload(
+        ClaimsPrincipal principal,
+        string dataRecordId,
+        IEnumerable<string> partTags)
     {
         throw new NotImplementedException();
     }
@@ -166,32 +172,26 @@ public class DataService : IDataService
             return ServiceResult<IEnumerable<DataRecord>>.Success(Enumerable.Empty<DataRecord>());
         }
 
-        var response = await _dynamoClient.QueryAsync(
-            new QueryRequest()
+        var dataResponse = await _dynamoClient.BatchGetItemAsync(
+            new BatchGetItemRequest()
             {
-                TableName = _dynamoConfig.DataTableName,
-                IndexName = _dynamoConfig.DataTableCreatedByIndexName,
-                KeyConditions = new Dictionary<string, Condition>()
+                RequestItems  = new Dictionary<string, KeysAndAttributes>()
                 {
-                    ["created_by"] = new Condition()
+                    [_dynamoConfig.DataTableName] = new KeysAndAttributes()
                     {
-                        ComparisonOperator = ComparisonOperator.EQ,
-                        AttributeValueList = new List<AttributeValue>()
-                        {
-                            new AttributeValue($"User::{user.Id}")
-                        }
+                        Keys = dataRecordIds.Select(dataRecordId =>
+                            new Dictionary<string, AttributeValue>()
+                            {
+                                ["id"] = new AttributeValue(dataRecordId)
+                            }).ToList()
                     }
                 }
             });
 
-        // TODO: compare the results vs. `dataRecordIds`
-
-        if (response.Items == default || !response.Items.Any())
-        {
-            return ServiceResult<IEnumerable<DataRecord>>.Success(Enumerable.Empty<DataRecord>());
-        }
-
-        return ServiceResult<IEnumerable<DataRecord>>.Success(response.Items.Select(ToDataRecord));
+        return ServiceResult<IEnumerable<DataRecord>>.Success(
+            dataResponse.Responses
+                .SelectMany(response => response.Value)
+                .Select(response => ToDataRecord(response)));
     }
 
     public async Task<ServiceResult<IEnumerable<DataRecord>>> GetProjectData(
@@ -290,10 +290,10 @@ public class DataService : IDataService
 
         item["size"] = new AttributeValue() { N = dataRecord.Size.ToString() };
 
-        if (string.IsNullOrEmpty(dataRecord.CreatedBy))
-            throw new Exception("Missing creator.");
+        //if (string.IsNullOrEmpty(dataRecord.CreatedBy))
+        //    throw new Exception("Missing creator.");
 
-        item["created_by"] = new AttributeValue(dataRecord.CreatedBy);
+        //item["created_by"] = new AttributeValue(dataRecord.CreatedBy);
 
         if (dataRecord.CreatedAt == default)
             throw new Exception("Missing CreatedAt.");
@@ -362,7 +362,7 @@ public class DataService : IDataService
             FileName = item.ContainsKey("file_name") ? item["file_name"].S : default,
             Location = item.ContainsKey("location") ? item["location"].S : default,
             Size = item.ContainsKey("size") ? ulong.Parse(item["size"].N) : default,
-            CreatedBy = item.ContainsKey("created_by") ? item["created_by"].S : default,
+            //CreatedBy = item.ContainsKey("created_by") ? item["created_by"].S : default,
             Metadata = item.ContainsKey("metadata") ? item["metadata"].S : default,
             CreatedAt = item.ContainsKey("created_at") ? DateTime.Parse(item["created_at"].S) : default,
             ModifiedAt = item.ContainsKey("modified_at") ? DateTime.Parse(item["modified_at"].S) : default

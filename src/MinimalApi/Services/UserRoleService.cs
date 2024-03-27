@@ -38,7 +38,7 @@ public class UserRoleService : IUserRoleService
             _dynamoConfig.UserRolesTableName,
             new Dictionary<string, AttributeValue>()
             {
-                ["id"] = new AttributeValue(userRoleId)
+                ["id"] = new AttributeValue(userRoleId),
             });
 
         return ToUserRole(userRole.Item);

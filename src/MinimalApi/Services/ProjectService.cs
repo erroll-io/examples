@@ -68,6 +68,11 @@ public class ProjectService : IProjectService
             "MinimalApi::Action::ReadProject",
             "Project");
 
+        if (!projectIds.Any())
+        {
+            return ServiceResult<IEnumerable<Project>>.Success(Enumerable.Empty<Project>());
+        }
+
         var projects = await _dynamoClient.BatchGetItemAsync(
             new BatchGetItemRequest()
             {

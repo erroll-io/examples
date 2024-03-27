@@ -3,7 +3,7 @@
         {
             "id": "GUID-large-file-ingestion",
             "name": "Large File Ingestion",
-            "description": ".",
+            "description": "Implementing multipart uploads using presigned S3 URLs.",
             "dataPath": "s3://minimal-api.erroll.io/projects/large-file-ingestion"
         },
         {
@@ -19,6 +19,13 @@
         { "id": "MinimalApi::Action::UpdateProject" },
         { "id": "MinimalApi::Action::DeleteProject" },
         { "id": "MinimalApi::Action::CreateProjectData" },
+        { "id": "MinimalApi::Action::ReadProjectData" },
+        { "id": "MinimalApi::Action::UpdateProjectData" },
+        { "id": "MinimalApi::Action::DeleteProjectData" },
+        { "id": "MinimalApi::Action::CreateProjectResults" },
+        { "id": "MinimalApi::Action::ReadProjectResults" },
+        { "id": "MinimalApi::Action::UpdateProjectResults" },
+        { "id": "MinimalApi::Action::DeleteProjectResults" },
         { "id": "MinimalApi::Action::CreateUserData" },
         { "id": "MinimalApi::Action::ReadData" },
         { "id": "MinimalApi::Action::UpdateData"},
@@ -31,14 +38,13 @@
             "description": "Any demo.erroll.io user.",
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::CreateUserData" },
-                { "permissionId": "MinimalApi::Action::ReadUserData" },
                 { "permissionId": "MinimalApi::Action::CreateProject" }
             ]
         },
         {
             "id": "MinimalApi::Role::ProjectAdmin",
             "name": "Project Administrator.",
-            "description": "Project Administrator.",
+            "description": "A project member with all project permissions.",
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::UpdateProject" },
@@ -73,7 +79,7 @@
         {
             "id": "MinimalApi::Role::ProjectViewer",
             "name": "Project Viewer.",
-            "description": "A user that can view project data.",
+            "description": "A project member that can view project data.",
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::ReadProjectResults" }
@@ -110,27 +116,9 @@
             "condition": "Project::GUID-large-file-ingestion"
         },
         {
-            "id": "GUID-earl-google-vcf-project-admin",
+            "id": "GUID-earl-google-vcf-project-viewer",
             "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
-            "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project::GUID-vcf-filtering"
-        },
-        {
-            "id": "GUID-earl-lfi-project-admin",
-            "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
-            "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project::GUID-large-file-ingestion"
-        },
-        {
-            "id": "GUID-earl-vcf-project-admin",
-            "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
-            "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project::GUID-vcf-filtering"
-        },
-        {
-            "id": "GUID-earl-vcf-project-admin",
-            "userId": "38f34089-35d7-4575-a967-5d4acf2e2c95",
-            "roleId": "MinimalApi::Role::ProjectAdmin",
+            "roleId": "MinimalApi::Role::ProjectViewer",
             "condition": "Project::GUID-vcf-filtering"
         },
         {

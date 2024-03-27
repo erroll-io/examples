@@ -48,7 +48,9 @@ public static class ProjectsEndpoints
         if (string.IsNullOrEmpty(projectId))
             return Results.BadRequest(nameof(projectId));
 
-        var projectUsersResult = await projectService.GetProjectUsers(httpContextAccessor.HttpContext.User, projectId);
+        var projectUsersResult = await projectService.GetProjectUsers(
+            httpContextAccessor.HttpContext.User,
+            projectId);
 
         return projectUsersResult.FromServiceResult(projectUsers =>
             projectUsers.Select(ToResponse));

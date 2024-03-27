@@ -52,7 +52,6 @@ public class DynamoSeeder
         }
 
         await SeedProjects(seedData);
-        //await SeedProjectUsers(seedData);
         await SeedPermissions(seedData);
         await SeedRoles(seedData);
         await SeedUsers(seedData);
@@ -100,28 +99,6 @@ public class DynamoSeeder
             }
         }
     }
-
-    //private async Task SeedProjectUsers(SeedData seedData)
-    //{
-    //    foreach (var seedProjectUser in seedData.ProjectUsers)
-    //    {
-    //        var projectUser = await _projectService.GetProjectUser(seedProjectUser.Id);
-
-    //        if (projectUser == default)
-    //        {
-    //            projectUser = new ProjectUser()
-    //            {
-    //                Id = seedProjectUser.Id,
-    //                ProjectId = seedProjectUser.ProjectId,
-    //                UserId = seedProjectUser.UserId,
-    //                CreatedAt = DateTime.UtcNow
-    //            };
-
-    //            await _projectService.SaveProjectUser(projectUser);
-    //        }
-    //    }
-    //}
-
 
     private async Task SeedPermissions(SeedData seedData)
     {
@@ -173,14 +150,12 @@ public class DynamoSeeder
 
             if (role == default)
             {
-                role = await _roleService.SaveRole(
-                    new Role()
+                role = new Role()
                     {
                         Id = seedRole.Id,
                         Name = seedRole.Name,
                         Description = seedRole.Description
-                    }
-                );
+                    };
 
                 doSave = true;
             }
@@ -251,16 +226,14 @@ public class DynamoSeeder
 
             if (userRole == default)
             {
-                userRole = await _userRoleService.SaveUserRole(
-                    new UserRole()
-                    {
-                        Id = seedUserRole.Id,
-                        UserId = seedUserRole.UserId,
-                        RoleId = seedUserRole.RoleId,
-                        Condition = seedUserRole.Condition,
-                        CreatedAt = DateTime.UtcNow
-                    }
-                );
+                userRole = new UserRole()
+                {
+                    Id = seedUserRole.Id,
+                    UserId = seedUserRole.UserId,
+                    RoleId = seedUserRole.RoleId,
+                    Condition = seedUserRole.Condition,
+                    CreatedAt = DateTime.UtcNow
+                };
 
                 doSave = true;
             }
@@ -284,10 +257,8 @@ public class DynamoSeeder
 public class SeedData
 {
     public IEnumerable<Project> Projects { get; set; }
-    //public IEnumerable<ProjectUser> ProjectUsers { get; set; }
     public IEnumerable<DataType> DataTypes { get; set; }
     public IEnumerable<DataRecord> DataRecords { get; set; }
-    //public IEnumerable<UserData> UserData { get; set; }
     public IEnumerable<ProjectData> ProjectData { get; set; }
     public IEnumerable<Permission> Permissions { get; set; }
     public IEnumerable<SeedRole> Roles { get; set; }
