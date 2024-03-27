@@ -11,24 +11,25 @@ using Amazon.DynamoDBv2.Model;
 
 namespace MinimalApi.Services;
 
-public interface IUsersService
+public interface IUserService
 {
     Task<User> CreateUser(UserCreateParams userCreateParams);
     Task<User> GetUser(string id);
     Task<User> GetCurrentUser(ClaimsPrincipal principal);
+    Task<User> SaveUser(User user);
     Task UpdateUser(string id, UserCreateParams updateParams);
     Task UpdateCurrentUser(ClaimsPrincipal principal, UserCreateParams updateParams);
 }
 
-public class UsersService : IUsersService
+public class UserService : IUserService
 {
     private readonly ILogger _logger;
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly IHasher _hasher;
     private readonly DynamoConfig _dynamoConfig;
 
-    public UsersService(
-        ILogger<UsersService> logger,
+    public UserService(
+        ILogger<UserService> logger,
         IAmazonDynamoDB dynamoClient,
         IHasher hasher,
         IOptions<DynamoConfig> dynamoConfigOptions)
@@ -213,7 +214,7 @@ public class UsersService : IUsersService
         return ToUser(response.Items.SingleOrDefault());
     }
 
-    private async Task<User> SaveUser(User user)
+    public async Task<User> SaveUser(User user)
     {
         var item = new Dictionary<string, AttributeValue>();
 
@@ -240,8 +241,7 @@ public class UsersService : IUsersService
         if (user.CreatedAt != default)
             item["created_at"] = new AttributeValue(user.CreatedAt.ToUniversalTime().ToString("o"));
 
-        if (user.ModifiedAt != default)
-            item["modified_at"] = new AttributeValue(user.ModifiedAt.ToUniversalTime().ToString("o"));
+        item["modified_at"] = new AttributeValue(DateTime.UtcNow.ToUniversalTime().ToString("o"));
 
         await _dynamoClient.PutItemAsync(new PutItemRequest()
         {
@@ -257,6 +257,9 @@ public class UsersService : IUsersService
         // TODO: review this
         if (item.ContainsKey("deleted_at"))
             throw new Exception("not found");
+
+        if (!item.Any())
+            return default;
 
         return new User()
         {

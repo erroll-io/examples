@@ -10,6 +10,7 @@ public class User
     public string Name { get; set; }
     public string Timezone { get; set; }
     public string Language { get; set; }
+    public string DataPath { get; set; }
     public string Metadata { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }

@@ -1,12 +1,20 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 using MinimalApi;
 
-await WebApplication.CreateSlimBuilder(args)
+var app = WebApplication.CreateSlimBuilder(args)
     .ConfigureApplicationConfiguration("/minimal-api")
     .ConfigureHostServices()
     .ConfigureApplicationServices()
     .Build()
     .ConfigureApplication()
-    .RegisterEndpoints()
-    .RunAsync();
+    .RegisterEndpoints();
+
+#if DEBUG
+var seeder = app.Services.GetRequiredService<DynamoSeeder>();
+
+await seeder.SeedData();
+#endif
+
+await app.RunAsync();

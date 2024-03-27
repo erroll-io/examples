@@ -13,7 +13,7 @@ namespace MinimalApi;
 public static class UsersEndpoints
 {
     public static async Task<IResult> CreateUser(
-        [FromServices] IUsersService usersService,
+        [FromServices] IUserService usersService,
         [FromBody] UserCreateRequest request)
     {
         if (request == default)
@@ -34,7 +34,7 @@ public static class UsersEndpoints
     }
 
     public static async Task<IResult> GetUser(
-        [FromServices] IUsersService usersService,
+        [FromServices] IUserService usersService,
         string id)
     {
         if (string.IsNullOrEmpty(id))
@@ -45,9 +45,9 @@ public static class UsersEndpoints
         return Results.Ok(user.ToResponse());
     }
 
-    //[Authorize]
+    [Authorize]
     public static async Task<IResult> GetCurrentUser(
-        [FromServices] IUsersService usersService,
+        [FromServices] IUserService usersService,
         [FromServices] IHttpContextAccessor httpContextAccessor)
     {
         var user = await usersService.GetCurrentUser(httpContextAccessor.HttpContext.User);
@@ -55,11 +55,13 @@ public static class UsersEndpoints
         return Results.Ok(user.ToResponse(
             httpContextAccessor.HttpContext.User == default
                 ? default
-                : httpContextAccessor.HttpContext.User.Claims.ToDictionary(kv => kv.Type, kv => kv.Value)));
+                : httpContextAccessor.HttpContext.User.Claims
+                    .Where(claim => claim.Type == "permission")
+                    .Select(claim => KeyValuePair.Create(claim.Type, claim.Value))));
     }
 
     public static async Task<IResult> UpdateUser(
-        [FromServices] IUsersService usersService,
+        [FromServices] IUserService usersService,
         string id,
         [FromBody] UserCreateRequest request)
     {
@@ -81,7 +83,7 @@ public static class UsersEndpoints
 
     public static async Task<IResult> UpdateCurrentUser(
         [FromServices] IHttpContextAccessor httpContextAccessor,
-        [FromServices] IUsersService usersService,
+        [FromServices] IUserService usersService,
         [FromBody] UserCreateRequest request)
     {
         await usersService.UpdateCurrentUser(
@@ -95,7 +97,7 @@ public static class UsersEndpoints
         return Results.NoContent();
     }
 
-    private static UserResponse ToResponse(this User user, Dictionary<string, string> claims = default)
+    private static UserResponse ToResponse(this User user, IEnumerable<KeyValuePair<string, string>> claims = default)
     {
         return new UserResponse()
         {

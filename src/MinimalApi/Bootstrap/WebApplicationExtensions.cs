@@ -10,7 +10,7 @@ public static class WebApplicationExtensions
     {
         return app
             .UseAuthentication()
-            //.UseAuthorization()
+            .UseAuthorization()
             .UseCors() as WebApplication;
     }
 
@@ -18,11 +18,22 @@ public static class WebApplicationExtensions
     {
         app.MapGet("/health", HealthEndpoints.GetHealth);
         app.MapPost("/health", HealthEndpoints.PostHealth);
+
         app.MapPost("/users", UsersEndpoints.CreateUser);
         app.MapGet("/users/{id}", UsersEndpoints.GetUser);
         app.MapGet("/users/current", UsersEndpoints.GetCurrentUser);
         app.MapPut("/users/{id}", UsersEndpoints.UpdateUser);
         app.MapPut("/users/current", UsersEndpoints.UpdateCurrentUser);
+
+        app.MapGet("/projects", ProjectsEndpoints.GetProjects);
+        app.MapGet("/projects/{projectId}", ProjectsEndpoints.GetProject);
+        app.MapGet("/projects/{projectId}/users", ProjectsEndpoints.GetProjectUsers);
+
+        app.MapPost("/data", DataEndpoints.CreateUserData);
+        app.MapGet("/data", DataEndpoints.GetUserData);
+        app.MapPost("/projects/{projectId}/data", DataEndpoints.CreateProjectData);
+        app.MapGet("/projects/{projectId}/data", DataEndpoints.GetProjectData);
+
         app.MapPost("/authorize", AuthorizationEndpoints.Authorize);
 
         return app;
