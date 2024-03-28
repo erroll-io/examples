@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
@@ -112,7 +113,6 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddTransient<IClaimsTransformation, AuthClaimsTransformation>();
-        builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
 
         if (builder.Environment.IsEnvironment("Local"))
         {
@@ -156,6 +156,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IDataService, DataService>();
+        builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
 
         return builder;
     }

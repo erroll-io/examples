@@ -1,0 +1,111 @@
+{
+    "projects": [
+        {
+            "id": "project-one"
+        },
+        {
+            "id": "project-two"
+        }
+    ],
+    "users": [
+        {
+            "id": "42424242-4242-4242-4242-424242424242",
+            "principalId": "user-one"
+        },
+        {
+            "id": "23232323-2323-2323-2323-232323232323",
+            "principalId": "user-two"
+        },
+        {
+            "id": "86868686-8686-8686-8686-868686868686",
+            "principalId": "user-three"
+        }
+    ],
+    "dataRecords": [
+        {
+            "id": "user-one-gvcf",
+            "dataTypeId": "gvcf",
+            "location": "s3://minimal-api.erroll.io/data/0d6f3fb4-a7c6-47b7-a9a2-d2a1f64a21b2",
+            "size": 118171165, 
+            "fileName": "HG007_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
+        },
+        {
+            "id": "user-two-gvcf",
+            "dataTypeId": "gvcf",
+            "location": "s3://minimal-api.erroll.io/data/215b7530-3985-41b0-a956-6062ac3190e9",
+            "size": 36700202,
+            "fileName": "NA12877.vcf.gz"
+        },
+        {
+            "id": "user-three-pdf",
+            "dataTypeId": "pdf",
+            "location": "s3://minimal-api.erroll.io/data/dde466ff-22f0-442e-b938-d7c8655c06df",
+            "size": 35840,
+            "fileName": "Invitae-ComprehensiveCarrier_negative.pdf"
+        }
+    ],
+    "projectData": [
+        {
+            "projectId": "project-one",
+            "dataRecordId": "user-one-gvcf"
+        },
+        {
+            "projectId": "project-one",
+            "dataRecordId": "user-two-gvcf"
+        },
+        {
+            "projectId": "project-two",
+            "dataRecordId": "user-two-gvcf"
+        }
+    ],
+    "userRoles": [
+        {
+            "id": "user-one-project-one-admin",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "MinimalApi::Role::ProjectAdmin",
+            "condition": "Project::project-one"
+        },
+        {
+            "id": "user-one-data-one",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "MinimalApi::Role::DataOwner",
+            "condition": "DataRecord::user-one-gvcf"
+        },
+        {
+            "id": "user-one-project-two-collaborator",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "MinimalApi::Role::ProjectCollaborator",
+            "condition": "Project::project-two"
+        },
+        {
+            "id": "user-two-project-one-collaborator",
+            "userId": "23232323-2323-2323-2323-232323232323",
+            "roleId": "MinimalApi::Role::ProjectCollaborator",
+            "condition": "Project::project-one"
+        },
+        {
+            "id": "user-two-project-two-viewer",
+            "userId": "23232323-2323-2323-2323-232323232323",
+            "roleId": "MinimalApi::Role::ProjectViewer",
+            "condition": "Project::project-two"
+        },
+        {
+            "id": "user-two-data-two",
+            "userId": "23232323-2323-2323-2323-232323232323",
+            "roleId": "MinimalApi::Role::DataOwner",
+            "condition": "DataRecord::user-two-gvcf"
+        },
+        {
+            "id": "user-three-project-one-viewer",
+            "userId": "86868686-8686-8686-8686-868686868686",
+            "roleId": "MinimalApi::Role::ProjectViewer",
+            "condition": "Project::project-one"
+        },
+        {
+            "id": "user-three-data-three",
+            "userId": "86868686-8686-8686-8686-868686868686",
+            "roleId": "MinimalApi::Role::DataOwner",
+            "condition": "DataRecord::user-three-pdf"
+        }
+    ]
+}

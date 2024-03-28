@@ -50,9 +50,12 @@ public static class UsersEndpoints
         [FromServices] IUserService usersService,
         [FromServices] IHttpContextAccessor httpContextAccessor)
     {
-        var user = await usersService.GetCurrentUser(httpContextAccessor.HttpContext.User);
+        var userResult = await usersService.GetCurrentUser(httpContextAccessor.HttpContext.User);
 
-        return Results.Ok(user.ToResponse(
+        if (!userResult.AuthorizationResult.Succeeded)
+            return Results.Forbid();
+
+        return Results.Ok(userResult.Result.ToResponse(
             httpContextAccessor.HttpContext.User == default
                 ? default
                 : httpContextAccessor.HttpContext.User.Claims
