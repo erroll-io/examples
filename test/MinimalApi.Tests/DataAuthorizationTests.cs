@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Amazon.DynamoDBv2;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MinimalApi.Services;
+using NSubstitute;
 
 namespace MinimalApi.Tests;
 
@@ -73,5 +76,45 @@ public class DataAuthorizationTests : IntegrationTestBase
         var dataResult = await dataService.GetDataRecord(principal, dataRecordId);
 
         Assert.Equal(expectedAuthResult, dataResult.AuthorizationResult.Succeeded);
+    }
+
+    [Fact]
+    public async Task DataOwnerRoleIsAssignedUponDataCreation()
+    {
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal("user-one");
+
+        var mockClaimsService = Substitute.For<IAuthClaimsService>();
+        mockClaimsService
+            .CreateUserRole(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>())
+            .Returns(
+                new UserRole()
+                {
+                });
+
+        var dataService = new DataService(
+            ServiceProvider.GetRequiredService<IAmazonDynamoDB>(),
+            mockClaimsService,
+            ServiceProvider.GetRequiredService<IUserService>(),
+            ServiceProvider.GetRequiredService<IOptions<DynamoConfig>>());
+
+        var dataRecordResult = await dataService.CreateDataRecord(
+            principal,
+            new DataRecordParams
+            {
+                DataTypeId = "pdf",
+                FileName = "foo.pdf",
+                Size = 42
+            });
+
+        Assert.True(dataRecordResult.IsSuccess);
+
+        await mockClaimsService.Received().CreateUserRole(
+            Arg.Any<string>(),
+            "MinimalApi::Role::DataOwner",
+            $"DataRecord::{dataRecordResult.Result.Id}");
     }
 }

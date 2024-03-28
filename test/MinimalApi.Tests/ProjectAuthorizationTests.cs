@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Amazon.DynamoDBv2;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MinimalApi.Services;
+using NSubstitute;
 
 namespace MinimalApi.Tests;
 
@@ -139,5 +142,43 @@ public class ProjectAuthorizationTests : IntegrationTestBase
             return;
 
         Assert.NotNull(project.Result);
+    }
+
+    [Fact]
+    public async Task ProjectMembershipRoleIsAssignedUponProjectUserCreation()
+    {
+        var projectId = "project-one";
+
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal("user-one");
+
+        var mockClaimsService = Substitute.For<IAuthClaimsService>();
+        mockClaimsService
+            .CreateUserRole(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>())
+            .Returns(
+                new UserRole()
+                {
+                });
+
+        var projectService = new ProjectService(
+            ServiceProvider.GetRequiredService<IAmazonDynamoDB>(),
+            mockClaimsService,
+            ServiceProvider.GetRequiredService<IOptions<DynamoConfig>>());
+
+        var result = await projectService.CreateProjectUser(
+            principal,
+            projectId,
+            "user-three",
+            "MinimalApi::Role::ProjectCollaborator");
+
+        Assert.True(result.IsSuccess);
+
+        await mockClaimsService.Received().CreateUserRole(
+            Arg.Any<string>(),
+            "MinimalApi::Role::ProjectCollaborator",
+            $"Project::{projectId}");
     }
 }

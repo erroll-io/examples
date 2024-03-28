@@ -35,19 +35,19 @@ public interface IDataService
 public class DataService : IDataService
 {
     private readonly IAmazonDynamoDB _dynamoClient;
-    private readonly IUserService _userService;
     private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserService _userService;
     private readonly DynamoConfig _dynamoConfig;
 
     public DataService(
         IAmazonDynamoDB dynamoClient,
-        IUserService userService,
         IAuthClaimsService authClaimsService,
+        IUserService userService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _dynamoClient = dynamoClient;
-        _userService = userService;
         _authClaimsService = authClaimsService;
+        _userService = userService;
         _dynamoConfig = dynamoConfigOptions.Value;
     }
 

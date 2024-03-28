@@ -26,7 +26,9 @@ public abstract class IntegrationTestBase
 
     protected IServiceProvider ServiceProvider { get; private set; }
 
-    protected IntegrationTestBase(string testSeedDataFileName = default)
+    protected IntegrationTestBase(
+        string testSeedDataFileName = default,
+        Action<IServiceCollection> configureServices = default)
     {
         var builder = WebApplication.CreateSlimBuilder()
             .ConfigureApplicationServices();
@@ -54,6 +56,8 @@ public abstract class IntegrationTestBase
                     ["project_data"] = "data_record_id",
                 }));
         builder.Services.AddSingleton<TestSeeder>();
+
+        configureServices?.Invoke(builder.Services);
         
         ServiceProvider = builder.Build().Services;
 

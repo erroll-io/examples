@@ -15,6 +15,7 @@ public interface IProjectService
 {
     Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId);
     Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal);
+    Task<ServiceResult> CreateProjectUser(ClaimsPrincipal principal, string projectId, string userId, string role);
     Task<ServiceResult<IEnumerable<ProjectUser>>> GetProjectUsers(ClaimsPrincipal principal, string projectId);
     Task<Project> SaveProject(Project project);
 }
@@ -93,6 +94,33 @@ public class ProjectService : IProjectService
             projects.Responses
                 .SelectMany(response => response.Value)
                 .Select(response => ToProject(response)));
+    }
+
+    public async Task<ServiceResult> CreateProjectUser(
+        ClaimsPrincipal principal,
+        string projectId,
+        string userId,
+        string role)
+    {
+        if (!principal.HasPermission(
+            "MinimalApi::Action::CreateProjectUser",
+            $"Project::{projectId}"))
+        {
+            return ServiceResult.Forbidden();
+        }
+
+        // TODO: better role validation
+        if (!role.StartsWith("MinimalApi::Role::Project"))
+        {
+            return ServiceResult.Failure("Invalid role.");
+        }
+
+        await _authClaimsService.CreateUserRole(
+            userId,
+            role,
+            $"Project::{projectId}");
+
+        return ServiceResult.Success();
     }
 
     public async Task<ServiceResult<IEnumerable<ProjectUser>>> GetProjectUsers(
