@@ -1,70 +1,143 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
-using Amazon.DynamoDBv2;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using MinimalApi.Services;
 
 namespace MinimalApi.Tests;
 
-public abstract class IntegrationTests
-{
-    protected IServiceProvider ServiceProvider { get; private set; }
-    protected DynamoConfig DynamoConfig =>
-        new DynamoConfig()
-        {
-            RolesTableName = "roles",
-            PermissionsTableName = "permissions",
-            RolePermissionsTableName = "role_permissions",
-            UserRolesTableName = "user_roles",
-            UsersTableName = "users",
-            ProjectsTableName = "projects",
-            DataTableName = "data",
-            ProjectDataTableName = "project_data",
-        };
-
-    protected IntegrationTests(string testSeedDataFileName = default)
-    {
-        var builder = WebApplication.CreateSlimBuilder()
-            .ConfigureApplicationServices();
-
-        builder.Services.AddSingleton(Options.Create(DynamoConfig));
-        builder.Services.AddTransient<IAmazonDynamoDB>(provider =>
-            new InMemoryDynamoClient(
-                new Dictionary<string, string>()
-                {
-                    ["projects"] = "id",
-                    ["roles"] = "id",
-                    ["permissions"] = "id",
-                    ["role_permissions"] = "role_id",
-                    ["users"] = "id",
-                    ["user_roles"] = "id"
-                },
-                new Dictionary<string, string>()
-                {
-                    ["role_permissions"] = "permission_id"
-                }));
-        builder.Services.AddSingleton<TestSeeder>();
-        
-        ServiceProvider = builder.Build().Services;
-
-        var seeder = ServiceProvider.GetRequiredService<TestSeeder>();
-        seeder.SeedData(testSeedDataFileName).Wait();
-    }
-}
-
-public class ProjectAuthorizationTests : IntegrationTests
+public class ProjectAuthorizationTests : IntegrationTestBase
 {
     public ProjectAuthorizationTests()
         : base (testSeedDataFileName: "ProjectAuthorizationTestData.json")
     {
     }
 
-    [Fact]
-    public async Task CanFoo()
+    [Theory]
+    [InlineData("user-one", 2)]
+    [InlineData("user-two", 2)]
+    [InlineData("user-three", 1)]
+    public async Task GetProjectsReturnsExpected(string userSub, int expectedCount)
     {
-        var dynamoClient = ServiceProvider.GetRequiredService<IAmazonDynamoDB>();
+        var projectService = ServiceProvider.GetRequiredService<IProjectService>();
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal(userSub);
+
+        var projectsResult = await projectService.GetProjects(principal);
+
+        Assert.True(projectsResult.AuthorizationResult.Succeeded);
+
+        Assert.Equal(expectedCount, projectsResult.Result.Count());
+    }
+
+    [Theory]
+    [InlineData("user-one", "project-one", true)] // admin
+    [InlineData("user-two", "project-one", true)] // collaborator
+    [InlineData("user-three", "project-one", true)] // viewer
+    [InlineData("user-one", "project-two", true)] // collaborator
+    [InlineData("user-two", "project-two", true)] // collaborator
+    [InlineData("user-three", "project-two", false)] // nothing
+    public async Task GetProjectReturnsExpected(string userSub, string projectId, bool expectedAuthResult)
+    {
+        var projectService = ServiceProvider.GetRequiredService<IProjectService>();
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal(userSub);
+
+        var project = await projectService.GetProject(principal, projectId);
+
+        Assert.Equal(expectedAuthResult, project.AuthorizationResult.Succeeded);
+
+        if (!project.AuthorizationResult.Succeeded)
+            return;
+
+        Assert.NotNull(project.Result);
+        Assert.Equal(projectId, project.Result.Id);
+    }
+
+    [Theory]
+    [InlineData("user-one", "project-one", true)] // admin
+    [InlineData("user-two", "project-one", true)] // collaborater 
+    [InlineData("user-three", "project-one", false)] // viewer
+    [InlineData("user-one", "project-two", true)] // collaborator
+    [InlineData("user-two", "project-two", false)] // viewer 
+    [InlineData("user-three", "project-two", false)] // nothing
+    public async Task GetProjectUsersReturnsExpected(string userSub, string projectId, bool expectedAuthResult)
+    {
+        var projectService = ServiceProvider.GetRequiredService<IProjectService>();
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal(userSub);
+
+        var project = await projectService.GetProjectUsers(principal, projectId);
+
+        Assert.Equal(expectedAuthResult, project.AuthorizationResult.Succeeded);
+
+        if (!project.AuthorizationResult.Succeeded)
+            return;
+
+        Assert.NotNull(project.Result);
+    }
+
+    [Theory]
+    [InlineData("user-one", "project-one", true)] // admin
+    [InlineData("user-two", "project-one", true)] // collaborater 
+    [InlineData("user-three", "project-one", false)] // viewer
+    [InlineData("user-one", "project-two", true)] // collaborator
+    [InlineData("user-two", "project-two", false)] // viewer 
+    [InlineData("user-three", "project-two", false)] // nothing
+    public async Task CreateProjectDataReturnsExpected(
+        string userSub,
+        string projectId,
+        bool expectedAuthResult)
+    {
+        var dataService = ServiceProvider.GetRequiredService<IDataService>();
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal(userSub);
+
+        var project = await dataService.CreateProjectData(
+            principal,
+            projectId,
+            new DataRecordParams()
+            {
+                DataTypeId = "bmp",
+                FileName = "peppers.bmp",
+                Size = 263168
+            });
+
+        if (expectedAuthResult != project.AuthorizationResult.Succeeded)
+            Console.WriteLine("break");
+
+        Assert.Equal(expectedAuthResult, project.AuthorizationResult.Succeeded);
+
+        if (!project.AuthorizationResult.Succeeded)
+            return;
+
+        Assert.NotNull(project.Result);
+    }
+
+    [Theory]
+    [InlineData("user-one", "project-one", true)] // admin
+    [InlineData("user-two", "project-one", true)] // collaborater 
+    [InlineData("user-three", "project-one", false)] // viewer
+    [InlineData("user-one", "project-two", true)] // collaborator
+    [InlineData("user-two", "project-two", false)] // viewer 
+    [InlineData("user-three", "project-two", false)] // nothing
+    public async Task GetProjectDataReturnsExpected(
+        string userSub,
+        string projectId,
+        bool expectedAuthResult)
+    {
+        var dataService = ServiceProvider.GetRequiredService<IDataService>();
+        var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
+            .GetClaimsPrincipal(userSub);
+
+        var project = await dataService.GetProjectData(principal, projectId);
+
+        Assert.Equal(expectedAuthResult, project.AuthorizationResult.Succeeded);
+
+        if (!project.AuthorizationResult.Succeeded)
+            return;
+
+        Assert.NotNull(project.Result);
     }
 }

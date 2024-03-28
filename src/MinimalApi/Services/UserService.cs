@@ -15,7 +15,7 @@ public interface IUserService
 {
     Task<User> CreateUser(UserCreateParams userCreateParams);
     Task<User> GetUser(string id);
-    Task<User> GetCurrentUser(ClaimsPrincipal principal);
+    Task<ServiceResult<User>> GetCurrentUser(ClaimsPrincipal principal);
     Task<User> SaveUser(User user);
     Task UpdateUser(string id, UserCreateParams updateParams);
     Task UpdateCurrentUser(ClaimsPrincipal principal, UserCreateParams updateParams);
@@ -94,9 +94,13 @@ public class UserService : IUserService
         return GetUserByPrincipalId(principalId);
     }
 
-    public async Task<User> GetCurrentUser(ClaimsPrincipal principal)
+    public async Task<ServiceResult<User>> GetCurrentUser(ClaimsPrincipal principal)
     {
-        var principalId = principal.GetPrincipalIdentity();
+        var principalId = principal?.GetPrincipalIdentity();
+
+        if (string.IsNullOrEmpty(principalId))
+            return ServiceResult<User>.Forbidden();
+
         var user = await GetUser(principal); 
 
         if (user == default)
@@ -117,7 +121,7 @@ public class UserService : IUserService
             }
         }
         
-        return user;
+        return ServiceResult<User>.Success(user);
     }
 
     public async Task UpdateUser(string id, UserCreateParams updateParams)

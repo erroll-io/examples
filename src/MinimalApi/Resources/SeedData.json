@@ -81,5 +81,23 @@
                 { "permissionId": "MinimalApi::Action::DeleteData" }
             ]
         }
+    ],
+    "todo": "handle seeding for this:",
+    "dataTypes": [
+        {
+            "id": "pdf",
+            "name": "PDF",
+            "description": "Document."
+        },
+        {
+            "id": "vcf",
+            "name": "VCF",
+            "description": "Variant Call File"
+        },
+        {
+            "id": "gvcf",
+            "name": "gVCF",
+            "description": "Genome VCF"
+        }
     ]
 }

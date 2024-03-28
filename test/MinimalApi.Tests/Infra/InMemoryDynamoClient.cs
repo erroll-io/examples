@@ -21,7 +21,6 @@ public class InMemoryDynamoClient : IAmazonDynamoDB
         private Dictionary<string, string> _hashKeyAttributesByTableName;
         private Dictionary<string, string> _rangeKeyAttributesByTableName;
 
-        // TODO: flag to modulate between static vs. instance backing store
         public InMemoryDynamoClient(
             Dictionary<string, string> hashKeyAttributesByTableName,
             Dictionary<string, string> rangeKeyAttributesByTableName = default,

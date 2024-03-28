@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -12,13 +11,10 @@ public class TestSeeder
 {
     internal static readonly string _appSeedDataPath = Path.Combine(
         Directory.GetCurrentDirectory(),
-        //Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
-        //"../../../src/MinimalApi",
         "Resources",
         "SeedData.json");
     internal static readonly string _testSeedDataPath = Path.Combine(
         Directory.GetCurrentDirectory(),
-        //Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
         "Resources");
 
     private readonly IProjectService _projectService;
@@ -26,19 +22,22 @@ public class TestSeeder
     private readonly IPermissionService _permissionService;
     private readonly IUserRoleService _userRoleService;
     private readonly IUserService _usersService;
+    private readonly IDataService _dataService;
 
     public TestSeeder(
         IProjectService projectService,
         IRoleService roleService,
         IPermissionService permissionService,
         IUserRoleService userRoleService,
-        IUserService usersService)
+        IUserService usersService,
+        IDataService dataService)
     {
         _projectService = projectService;
         _roleService = roleService;
         _permissionService = permissionService;
         _userRoleService = userRoleService;
         _usersService = usersService;
+        _dataService = dataService;
     }
 
     public async Task SeedData(string seedFileName = default)
@@ -67,56 +66,16 @@ public class TestSeeder
             await File.ReadAllTextAsync(Path.Combine(_testSeedDataPath, seedFileName)),
             jsonSerializerOptions);
         
-        if (appSeedData == null)
+        if (testSeedData == null)
         {
             throw new Exception("Failed to deserialize seed data.");
         }
 
         await SeedProjects(testSeedData);
         await SeedUsers(testSeedData);
+        await SeedDataRecords(testSeedData);
+        await SeedProjectData(testSeedData);
         await SeedUserRoles(testSeedData);
-    }
-
-    private async Task SeedProjects(SeedData seedData)
-    {
-        foreach (var seedProject in seedData.Projects)
-        {
-            var doSave = false;
-
-            var project = await (_projectService as ProjectService).GetProject(seedProject.Id);
-
-            if (project == default)
-            {
-                project = new Project()
-                {
-                    Id = seedProject.Id,
-                    Name = seedProject.Name,
-                    DataPath = seedProject.DataPath,
-                    Description = seedProject.Description,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                doSave = true;
-            }
-            else
-            {
-                if (project.Name != seedProject.Name)
-                {
-                    project.Name = seedProject.Name;
-                    doSave = true;
-                }
-                if (project.Description != seedProject.Description)
-                {
-                    project.Description = seedProject.Description;
-                    doSave = true;
-                }
-            }
-
-            if (doSave)
-            {
-                await _projectService.SaveProject(project);
-            }
-        }
     }
 
     private async Task SeedPermissions(SeedData seedData)
@@ -211,6 +170,93 @@ public class TestSeeder
                         });
                 }
             }
+        }
+    }
+
+    private async Task SeedProjects(SeedData seedData)
+    {
+        foreach (var seedProject in seedData.Projects)
+        {
+            var doSave = false;
+
+            var project = await (_projectService as ProjectService).GetProject(seedProject.Id);
+
+            if (project == default)
+            {
+                project = new Project()
+                {
+                    Id = seedProject.Id,
+                    Name = seedProject.Name,
+                    DataPath = seedProject.DataPath,
+                    Description = seedProject.Description,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                doSave = true;
+            }
+            else
+            {
+                if (project.Name != seedProject.Name)
+                {
+                    project.Name = seedProject.Name;
+                    doSave = true;
+                }
+                if (project.Description != seedProject.Description)
+                {
+                    project.Description = seedProject.Description;
+                    doSave = true;
+                }
+            }
+
+            if (doSave)
+            {
+                await _projectService.SaveProject(project);
+            }
+        }
+    }
+
+    private async Task SeedDataRecords(SeedData seedData)
+    {
+        foreach (var seedDataRecord in seedData.DataRecords)
+        {
+            var dataRecord = await (_dataService as DataService).GetDataRecord(seedDataRecord.Id);
+
+            if (dataRecord != default)
+                continue;
+
+            dataRecord = new DataRecord()
+            {
+                Id = seedDataRecord.Id,
+                DataTypeId = seedDataRecord.DataTypeId,
+                FileName = seedDataRecord.FileName,
+                Size = seedDataRecord.Size,
+                Location = seedDataRecord.Location,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _dataService.SaveDataRecord(dataRecord);
+        }
+    }
+
+    private async Task SeedProjectData(SeedData seedData)
+    {
+        foreach (var seedProjectData in seedData.ProjectData)
+        {
+            var projectData = await (_dataService as DataService).GetProjectData(
+                seedProjectData.ProjectId,
+                seedProjectData.DataRecordId);
+
+            if (projectData != default)
+                continue;
+
+            projectData = new ProjectData()
+            {
+                ProjectId = seedProjectData.ProjectId,
+                DataRecordId = seedProjectData.DataRecordId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _dataService.SaveProjectData(projectData);
         }
     }
 

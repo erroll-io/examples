@@ -36,9 +36,9 @@ public class AuthClaimsService : IAuthClaimsService
     {
         // TODO: claims caching
 
-        var user = await _userService.GetCurrentUser(principal);
+        var userResult = await _userService.GetCurrentUser(principal);
 
-        var userRoles = await _userRoleService.GetUserRolesByUserId(user.Id);
+        var userRoles = await _userRoleService.GetUserRolesByUserId(userResult.Result.Id);
 
         var tasks = userRoles.Select(async (userRole) => 
         {
