@@ -216,6 +216,17 @@ public class UserService : IUserService
 
     public async Task<User> SaveUser(User user)
     {
+        await _dynamoClient.PutItemAsync(new PutItemRequest()
+        {
+            TableName = _dynamoConfig.UsersTableName,
+            Item = FromUser(user)
+        });
+
+        return user;
+    }
+
+    internal static Dictionary<string, AttributeValue> FromUser(User user)
+    {
         var item = new Dictionary<string, AttributeValue>();
 
         if (string.IsNullOrEmpty(user.Id))
@@ -243,16 +254,10 @@ public class UserService : IUserService
 
         item["modified_at"] = new AttributeValue(DateTime.UtcNow.ToUniversalTime().ToString("o"));
 
-        await _dynamoClient.PutItemAsync(new PutItemRequest()
-        {
-            TableName = _dynamoConfig.UsersTableName,
-            Item = item
-        });
-
-        return user;
+        return item;
     }
 
-    private User ToUser(Dictionary<string, AttributeValue> item)
+    internal static User ToUser(Dictionary<string, AttributeValue> item)
     {
         // TODO: review this
         if (item.ContainsKey("deleted_at"))

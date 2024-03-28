@@ -127,6 +127,19 @@ public class ProjectService : IProjectService
 
     public async Task<Project> SaveProject(Project project)
     {
+        var item = FromProject(project);
+
+        await _dynamoClient.PutItemAsync(new PutItemRequest()
+        {
+            TableName = _dynamoConfig.ProjectsTableName,
+            Item = item
+        });
+
+        return project;
+    }
+
+    internal static Dictionary<string, AttributeValue> FromProject(Project project)
+    {
         var item = new Dictionary<string, AttributeValue>();
 
         if (string.IsNullOrEmpty(project.Id))
@@ -153,16 +166,10 @@ public class ProjectService : IProjectService
 
         item["modified_at"] = new AttributeValue(DateTime.UtcNow.ToUniversalTime().ToString("o"));
 
-        await _dynamoClient.PutItemAsync(new PutItemRequest()
-        {
-            TableName = _dynamoConfig.ProjectsTableName,
-            Item = item
-        });
-
-        return project;
+        return item;
     }
 
-    private Project ToProject(Dictionary<string, AttributeValue> item)
+    internal static Project ToProject(Dictionary<string, AttributeValue> item)
     {
         if (item == default || !item.Any())
             return default;

@@ -1,0 +1,82 @@
+{
+    "projects": [
+        {
+            "id": "project-one"
+        },
+        {
+            "id": "project-two"
+        }
+    ],
+    "permissions": [
+        { "id": "TestApi::Action::CreateFoo" },
+        { "id": "TestApi::Action::ReadFoo" },
+        { "id": "TestApi::Action::UpdateFoo" },
+        { "id": "TestApi::Action::DeleteFoo" }
+    ],
+    "roles": [
+        {
+            "id": "TestApi::Role::Admin",
+            "rolePermissions": [
+                { "permissionId": "TestApi::Action::CreateFoo" },
+                { "permissionId": "TestApi::Action::ReadFoo" },
+                { "permissionId": "TestApi::Action::UpdateFoo" },
+                { "permissionId": "TestApi::Action::DeleteFoo" }
+            ]
+        },
+        {
+            "id": "TestApi::Role::Collaborator",
+            "rolePermissions": [
+                { "permissionId": "TestApi::Action::ReadFoo" },
+                { "permissionId": "TestApi::Action::UpdateFoo" }
+            ]
+        },
+        {
+            "id": "TestApi::Role::Viewer",
+            "rolePermissions": [
+                { "permissionId": "TestApi::Action::ReadFoo" }
+            ]
+        }
+    ],
+    "users": [
+        {
+            "id": "42424242-4242-4242-4242-424242424242",
+            "principalId": "one"
+        },
+        {
+            "id": "23232323-2323-2323-2323-232323232323",
+            "principalId": "two"
+        }
+    ],
+    "userRoles": [
+        {
+            "id": "user-one-project-one-admin",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "TestApi::Role::Admin",
+            "condition": "User::39cc99d8-3cb7-4f7b-8ea3-af825fa20751"
+        },
+        {
+            "id": "GUID-earl-google-lfi-project-admin",
+            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
+            "roleId": "MinimalApi::Role::ProjectAdmin",
+            "condition": "Project::GUID-large-file-ingestion"
+        },
+        {
+            "id": "GUID-earl-google-vcf-project-viewer",
+            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
+            "roleId": "MinimalApi::Role::ProjectViewer",
+            "condition": "Project::GUID-vcf-filtering"
+        },
+        {
+            "id": "GUID-demo-lfi-project-collaborator",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "MinimalApi::Role::ProjectCollaborator",
+            "condition": "Project::GUID-large-file-ingestion"
+        },
+        {
+            "id": "GUID-demo-vcf-project-viewer",
+            "userId": "42424242-4242-4242-4242-424242424242",
+            "roleId": "MinimalApi::Role::ProjectViewer",
+            "condition": "Project::GUID-vcf-filtering"
+        }
+    ]
+}

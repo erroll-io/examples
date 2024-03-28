@@ -6,12 +6,19 @@ using System.Threading.Tasks;
 
 using MinimalApi.Services;
 
-namespace MinimalApi;
+namespace MinimalApi.Tests;
 
-public class DynamoSeeder
+public class TestSeeder
 {
-    internal static readonly string _seedDataPath = Path.Combine(
-        Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
+    internal static readonly string _appSeedDataPath = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        //Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
+        //"../../../src/MinimalApi",
+        "Resources",
+        "SeedData.json");
+    internal static readonly string _testSeedDataPath = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        //Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
         "Resources");
 
     private readonly IProjectService _projectService;
@@ -20,7 +27,7 @@ public class DynamoSeeder
     private readonly IUserRoleService _userRoleService;
     private readonly IUserService _usersService;
 
-    public DynamoSeeder(
+    public TestSeeder(
         IProjectService projectService,
         IRoleService roleService,
         IPermissionService permissionService,
@@ -34,27 +41,40 @@ public class DynamoSeeder
         _usersService = usersService;
     }
 
-    public async Task SeedData()
+    public async Task SeedData(string seedFileName = default)
     {
         var jsonSerializerOptions = new JsonSerializerOptions();
         jsonSerializerOptions.TypeInfoResolverChain.Add(MinimalApiJsonSerializerContext.Default);
         jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         jsonSerializerOptions.PropertyNameCaseInsensitive = true;
 
-        var seedData = JsonSerializer.Deserialize<SeedData>(
-            await File.ReadAllTextAsync(_seedDataPath),
+        var appSeedData = JsonSerializer.Deserialize<SeedData>(
+            await File.ReadAllTextAsync(_appSeedDataPath),
             jsonSerializerOptions);
         
-        if (seedData == null)
+        if (appSeedData == null)
         {
             throw new Exception("Failed to deserialize seed data.");
         }
 
-        await SeedProjects(seedData);
-        await SeedUsers(seedData);
-        await SeedUserRoles(seedData);
-        await SeedPermissions(seedData);
-        await SeedRoles(seedData);
+        await SeedRoles(appSeedData);
+        await SeedPermissions(appSeedData);
+
+        if (string.IsNullOrEmpty(seedFileName))
+            return;
+
+        var testSeedData = JsonSerializer.Deserialize<SeedData>(
+            await File.ReadAllTextAsync(Path.Combine(_testSeedDataPath, seedFileName)),
+            jsonSerializerOptions);
+        
+        if (appSeedData == null)
+        {
+            throw new Exception("Failed to deserialize seed data.");
+        }
+
+        await SeedProjects(testSeedData);
+        await SeedUsers(testSeedData);
+        await SeedUserRoles(testSeedData);
     }
 
     private async Task SeedProjects(SeedData seedData)
@@ -251,21 +271,4 @@ public class DynamoSeeder
             }
         }
     }
-}
-
-public class SeedData
-{
-    public IEnumerable<Project> Projects { get; set; }
-    public IEnumerable<DataType> DataTypes { get; set; }
-    public IEnumerable<DataRecord> DataRecords { get; set; }
-    public IEnumerable<ProjectData> ProjectData { get; set; }
-    public IEnumerable<Permission> Permissions { get; set; }
-    public IEnumerable<SeedRole> Roles { get; set; }
-    public IEnumerable<User> Users { get; set; }
-    public IEnumerable<UserRole> UserRoles { get; set; }
-}
-
-public class SeedRole : Role
-{
-    public IEnumerable<RolePermission> RolePermissions { get; set; }
 }

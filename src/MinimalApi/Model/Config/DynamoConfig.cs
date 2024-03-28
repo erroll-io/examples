@@ -6,7 +6,6 @@ public class DynamoConfig
     public string UsersTablePrincipalIdIndexName { get; set; }
     public string UsersTableEmailHashIndexName { get; set; }
     public string ProjectsTableName { get; set; }
-    public string ProjectUsersTableName { get; set; }
     public string DataTableName { get; set; }
     public string DataTableCreatedByIndexName { get; set; }
     public string ProjectDataTableName { get; set; }
