@@ -9,6 +9,7 @@ using Amazon.DynamoDBv2;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
@@ -95,7 +96,9 @@ public static class WebApplicationBuilderExtensions
                 });
         builder.Services.AddAuthorization();
 
-        builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
+        builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
+        builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
+        //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 
         builder.Services.AddCors();
         builder.Services.AddOptions<CorsOptions>()

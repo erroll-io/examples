@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MinimalApi.Services;
@@ -18,10 +19,10 @@ public class ProjectAuthorizationTests : IntegrationTestBase
     }
 
     [Theory]
-    [InlineData("user-one", 2)]
-    [InlineData("user-two", 2)]
-    [InlineData("user-three", 1)]
-    public async Task GetProjectsReturnsExpected(string userSub, int expectedCount)
+    [InlineData("user-one", "project-one", "project-two")]
+    [InlineData("user-two", "project-one", "project-two")]
+    [InlineData("user-three", "project-one")]
+    public async Task GetProjectsReturnsExpected(string userSub, params string[] expectedProjectIds)
     {
         var projectService = ServiceProvider.GetRequiredService<IProjectService>();
         var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
@@ -31,7 +32,16 @@ public class ProjectAuthorizationTests : IntegrationTestBase
 
         Assert.True(projectsResult.AuthorizationResult.Succeeded);
 
-        Assert.Equal(expectedCount, projectsResult.Result.Count());
+        var projectIds = projectsResult.Result
+            .Select(project => project.Id)
+            .ToArray();
+        
+        Assert.Equal(expectedProjectIds.Length, projectIds.Length);
+
+        foreach (var expectedProjectId in expectedProjectIds)
+        {
+            Assert.Contains(expectedProjectId, projectIds);
+        }
     }
 
     [Theory]
@@ -164,6 +174,7 @@ public class ProjectAuthorizationTests : IntegrationTestBase
                 });
 
         var projectService = new ProjectService(
+            ServiceProvider.GetRequiredService<IAuthorizationService>(),
             ServiceProvider.GetRequiredService<IAmazonDynamoDB>(),
             mockClaimsService,
             ServiceProvider.GetRequiredService<IOptions<DynamoConfig>>());

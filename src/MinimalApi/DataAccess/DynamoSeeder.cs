@@ -12,7 +12,8 @@ public class DynamoSeeder
 {
     internal static readonly string _seedDataPath = Path.Combine(
         Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
-        "Resources");
+        "Resources",
+        "SeedData.json");
 
     private readonly IProjectService _projectService;
     private readonly IRoleService _roleService;
@@ -50,11 +51,12 @@ public class DynamoSeeder
             throw new Exception("Failed to deserialize seed data.");
         }
 
-        await SeedProjects(seedData);
-        await SeedUsers(seedData);
-        await SeedUserRoles(seedData);
         await SeedPermissions(seedData);
         await SeedRoles(seedData);
+
+        //await SeedProjects(seedData);
+        //await SeedUsers(seedData);
+        //await SeedUserRoles(seedData);
     }
 
     private async Task SeedProjects(SeedData seedData)

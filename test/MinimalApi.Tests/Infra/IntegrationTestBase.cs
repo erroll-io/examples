@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -33,6 +34,7 @@ public abstract class IntegrationTestBase
         var builder = WebApplication.CreateSlimBuilder()
             .ConfigureApplicationServices();
 
+        builder.Services.AddAuthorization();
         builder.Services.AddSingleton<AuthClaimsTransformation>();
         builder.Services.AddSingleton<ClaimsPrincipalFactory>();
 

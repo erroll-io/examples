@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
@@ -22,15 +23,18 @@ public interface IProjectService
 
 public class ProjectService : IProjectService
 {
+    private readonly IAuthorizationService _authorizationService;
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly IAuthClaimsService _authClaimsService;
     private readonly DynamoConfig _dynamoConfig;
 
     public ProjectService(
+        IAuthorizationService authorizationService,
         IAmazonDynamoDB dynamoClient,
         IAuthClaimsService authClaimsService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
+        _authorizationService = authorizationService;
         _dynamoClient = dynamoClient;
         _authClaimsService = authClaimsService;
         _dynamoConfig = dynamoConfigOptions.Value;
@@ -38,16 +42,28 @@ public class ProjectService : IProjectService
 
     public async Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadProject",
-            $"Project::{projectId}"))
+        //// approach 1: explicit requirement
+        //var authResult = await _authorizationService.AuthorizeAsync(
+        //    principal,
+        //    new OperationRequirement()
+        //    {
+        //        Operation = "MinimalApi::Action::ReadProject",
+        //        Condition = $"Project::{projectId}"
+        //    });
+
+        // approach 2: policy
+        var authResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            $"MinimalApi::Action::ReadProject:Project::{projectId}");
+
+        if (!authResult.Succeeded)
         {
-            return ServiceResult<Project>.Forbidden();
+            return ServiceResult<Project>.Forbidden(authResult);
         }
 
         var project = await GetProject(projectId);
 
-        return ServiceResult<Project>.Success(project);
+        return ServiceResult<Project>.Success(project, authResult);
     }
 
     public async Task<Project> GetProject(string projectId)
@@ -63,6 +79,7 @@ public class ProjectService : IProjectService
     }
 
     // TODO: pagination
+    // TODO: projection expression?
     public async Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal)
     {
         var projectIds = principal.GetResourceIdsForPermissionCondition(
