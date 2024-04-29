@@ -28,25 +28,26 @@ public interface IDataService
     Task<ServiceResult<IEnumerable<DataRecord>>> GetUserData(ClaimsPrincipal principal);
     Task<ServiceResult<IEnumerable<DataRecord>>> GetProjectData(ClaimsPrincipal principal, string projectId);
     Task<DataRecord> SaveDataRecord(DataRecord dataRecord);
+    Task<ProjectData> GetProjectData(string projectId, string dataRecordId);
     Task<ProjectData> SaveProjectData(ProjectData projectData);
 }
 
 public class DataService : IDataService
 {
     private readonly IAmazonDynamoDB _dynamoClient;
-    private readonly IUserService _userService;
     private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserService _userService;
     private readonly DynamoConfig _dynamoConfig;
 
     public DataService(
         IAmazonDynamoDB dynamoClient,
-        IUserService userService,
         IAuthClaimsService authClaimsService,
+        IUserService userService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _dynamoClient = dynamoClient;
-        _userService = userService;
         _authClaimsService = authClaimsService;
+        _userService = userService;
         _dynamoConfig = dynamoConfigOptions.Value;
     }
 
@@ -54,14 +55,12 @@ public class DataService : IDataService
         ClaimsPrincipal principal,
         DataRecordParams dataRecordParams)
     {
-        var user = await _userService.GetCurrentUser(principal);
-
-        if (!principal.HasPermission(
-            "MinimalApi::Action::CreateUserData",
-            $"User::{user.Id}"))
+        if (principal == default || string.IsNullOrEmpty(principal.GetPrincipalIdentity()))
         {
             return ServiceResult<DataRecord>.Forbidden(AuthorizationResult.Failed());
         }
+
+        var userResult = await _userService.GetCurrentUser(principal);
 
         // TODO: transaction
         {
@@ -72,14 +71,13 @@ public class DataService : IDataService
                 Location = $"s3://TODO",
                 FileName = dataRecordParams.FileName,
                 Size = dataRecordParams.Size,
-                //CreatedBy = $"User::{user.Id}",
                 CreatedAt = DateTime.UtcNow
             };
 
             await SaveDataRecord(dataRecord);
 
             await _authClaimsService.CreateUserRole(
-                user.Id,
+                userResult.Result.Id,
                 "MinimalApi::Role::DataOwner",
                 $"DataRecord::{dataRecord.Id}");
 
@@ -140,6 +138,15 @@ public class DataService : IDataService
             return ServiceResult<DataRecord>.Forbidden(AuthorizationResult.Failed());
         }
 
+        var dataRecord = await GetDataRecord(dataRecordId);
+
+        return dataRecord == default
+            ? ServiceResult<DataRecord>.Failure()
+            : ServiceResult<DataRecord>.Success(dataRecord);
+    }
+
+    internal async Task<DataRecord> GetDataRecord(string dataRecordId)
+    {
         var data = await _dynamoClient.GetItemAsync(
             _dynamoConfig.DataTableName,
             new Dictionary<string, AttributeValue>()
@@ -147,11 +154,7 @@ public class DataService : IDataService
                 ["id"] = new AttributeValue(dataRecordId)
             });
 
-        var dataRecord = ToDataRecord(data.Item);
-
-        return dataRecord == default
-            ? ServiceResult<DataRecord>.Failure()
-            : ServiceResult<DataRecord>.Success(dataRecord);
+        return ToDataRecord(data.Item);
     }
 
     public async Task<ServiceResult<IEnumerable<DataRecord>>> GetUserData(ClaimsPrincipal principal)
@@ -198,20 +201,18 @@ public class DataService : IDataService
         ClaimsPrincipal principal,
         string projectId)
     {
+        if (!principal.HasPermission(
+            "MinimalApi::Action::ReadProjectData",
+            $"Project::{projectId}"))
+        {
+            return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
+        }
+
         var user = await _userService.GetCurrentUser(principal);
 
         if (user == default)
         {
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
-        }
-
-        var userProjectIds = principal.GetResourceIdsForPermissionCondition(
-            "MinimalApi::Action::ReadProjectData",
-            "Project");
-
-        if (userProjectIds == default || !userProjectIds.Any())
-        {
-            return ServiceResult<IEnumerable<DataRecord>>.Success(Enumerable.Empty<DataRecord>());
         }
 
         var projectDataResponse = await _dynamoClient.QueryAsync(
@@ -259,6 +260,19 @@ public class DataService : IDataService
             dataResponse.Responses
                 .SelectMany(response => response.Value)
                 .Select(response => ToDataRecord(response)));
+    }
+
+    public async Task<ProjectData> GetProjectData(string projectId, string dataRecordId)
+    {
+        var projectDataResponse = await _dynamoClient.GetItemAsync(
+            _dynamoConfig.ProjectDataTableName,
+            new Dictionary<string, AttributeValue>()
+            {
+                ["project_id"] = new AttributeValue(projectId),
+                ["data_record_id"] = new AttributeValue(dataRecordId),
+            });
+
+        return ToProjectData(projectDataResponse.Item);
     }
 
     public async Task<DataRecord> SaveDataRecord(DataRecord dataRecord)

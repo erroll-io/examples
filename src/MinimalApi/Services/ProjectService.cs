@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
@@ -15,21 +16,25 @@ public interface IProjectService
 {
     Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId);
     Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal);
+    Task<ServiceResult> CreateProjectUser(ClaimsPrincipal principal, string projectId, string userId, string role);
     Task<ServiceResult<IEnumerable<ProjectUser>>> GetProjectUsers(ClaimsPrincipal principal, string projectId);
     Task<Project> SaveProject(Project project);
 }
 
 public class ProjectService : IProjectService
 {
+    private readonly IAuthorizationService _authorizationService;
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly IAuthClaimsService _authClaimsService;
     private readonly DynamoConfig _dynamoConfig;
 
     public ProjectService(
+        IAuthorizationService authorizationService,
         IAmazonDynamoDB dynamoClient,
         IAuthClaimsService authClaimsService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
+        _authorizationService = authorizationService;
         _dynamoClient = dynamoClient;
         _authClaimsService = authClaimsService;
         _dynamoConfig = dynamoConfigOptions.Value;
@@ -37,16 +42,22 @@ public class ProjectService : IProjectService
 
     public async Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadProject",
-            $"Project::{projectId}"))
+        var authResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement()
+            {
+                Operation = "MinimalApi::Action::ReadProject",
+                Condition = $"Project::{projectId}"
+            });
+
+        if (!authResult.Succeeded)
         {
-            return ServiceResult<Project>.Forbidden();
+            return ServiceResult<Project>.Forbidden(authResult);
         }
 
         var project = await GetProject(projectId);
 
-        return ServiceResult<Project>.Success(project);
+        return ServiceResult<Project>.Success(project, authResult);
     }
 
     public async Task<Project> GetProject(string projectId)
@@ -62,6 +73,7 @@ public class ProjectService : IProjectService
     }
 
     // TODO: pagination
+    // TODO: projection expression?
     public async Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal)
     {
         var projectIds = principal.GetResourceIdsForPermissionCondition(
@@ -93,6 +105,39 @@ public class ProjectService : IProjectService
             projects.Responses
                 .SelectMany(response => response.Value)
                 .Select(response => ToProject(response)));
+    }
+
+    public async Task<ServiceResult> CreateProjectUser(
+        ClaimsPrincipal principal,
+        string projectId,
+        string userId,
+        string role)
+    {
+        var authResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement()
+            {
+                Operation = "MinimalApi::Action::CreateProjectUser",
+                Condition = $"Project::{projectId}"
+            });
+
+        if (!authResult.Succeeded)
+        {
+            return ServiceResult<Project>.Forbidden(authResult);
+        }
+
+        // TODO: better role validation
+        if (!role.StartsWith("MinimalApi::Role::Project"))
+        {
+            return ServiceResult.Failure("Invalid role.");
+        }
+
+        await _authClaimsService.CreateUserRole(
+            userId,
+            role,
+            $"Project::{projectId}");
+
+        return ServiceResult.Success();
     }
 
     public async Task<ServiceResult<IEnumerable<ProjectUser>>> GetProjectUsers(
@@ -127,6 +172,19 @@ public class ProjectService : IProjectService
 
     public async Task<Project> SaveProject(Project project)
     {
+        var item = FromProject(project);
+
+        await _dynamoClient.PutItemAsync(new PutItemRequest()
+        {
+            TableName = _dynamoConfig.ProjectsTableName,
+            Item = item
+        });
+
+        return project;
+    }
+
+    internal static Dictionary<string, AttributeValue> FromProject(Project project)
+    {
         var item = new Dictionary<string, AttributeValue>();
 
         if (string.IsNullOrEmpty(project.Id))
@@ -153,16 +211,10 @@ public class ProjectService : IProjectService
 
         item["modified_at"] = new AttributeValue(DateTime.UtcNow.ToUniversalTime().ToString("o"));
 
-        await _dynamoClient.PutItemAsync(new PutItemRequest()
-        {
-            TableName = _dynamoConfig.ProjectsTableName,
-            Item = item
-        });
-
-        return project;
+        return item;
     }
 
-    private Project ToProject(Dictionary<string, AttributeValue> item)
+    internal static Project ToProject(Dictionary<string, AttributeValue> item)
     {
         if (item == default || !item.Any())
             return default;

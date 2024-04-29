@@ -1,18 +1,4 @@
 {
-    "projects": [
-        {
-            "id": "GUID-large-file-ingestion",
-            "name": "Large File Ingestion",
-            "description": "Implementing multipart uploads using presigned S3 URLs.",
-            "dataPath": "s3://minimal-api.erroll.io/projects/large-file-ingestion"
-        },
-        {
-            "id": "GUID-vcf-filtering",
-            "name": "VCF Viewer",
-            "description": "Building a VCF filtering tool with S3, Athena, and Quicksight.",
-            "dataPath": "s3://minimal-api.erroll.io/projects/vcf-filtering"
-        }
-    ],
     "permissions": [
         { "id": "MinimalApi::Action::CreateProject" },
         { "id": "MinimalApi::Action::ReadProject" },
@@ -49,6 +35,10 @@
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::UpdateProject" },
                 { "permissionId": "MinimalApi::Action::DeleteProject" },
+                { "permissionId": "MinimalApi::Action::CreateProjectUser" },
+                { "permissionId": "MinimalApi::Action::ReadProjectUser" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectUser" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectUser" },
                 { "permissionId": "MinimalApi::Action::CreateProjectData" },
                 { "permissionId": "MinimalApi::Action::ReadProjectData" },
                 { "permissionId": "MinimalApi::Action::UpdateProjectData" },
@@ -96,42 +86,22 @@
             ]
         }
     ],
-    "users": [
+    "todo": "handle seeding for this:",
+    "dataTypes": [
         {
-            "id": "42424242-4242-4242-4242-424242424242",
-            "principalId": "GUID-demo"
-        }
-    ],
-    "userRoles": [
-        {
-            "id": "GUID-earl-google-user",
-            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
-            "roleId": "MinimalApi::Role::AppUser",
-            "condition": "User::39cc99d8-3cb7-4f7b-8ea3-af825fa20751"
+            "id": "pdf",
+            "name": "PDF",
+            "description": "Document."
         },
         {
-            "id": "GUID-earl-google-lfi-project-admin",
-            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
-            "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project::GUID-large-file-ingestion"
+            "id": "vcf",
+            "name": "VCF",
+            "description": "Variant Call File"
         },
         {
-            "id": "GUID-earl-google-vcf-project-viewer",
-            "userId": "39cc99d8-3cb7-4f7b-8ea3-af825fa20751",
-            "roleId": "MinimalApi::Role::ProjectViewer",
-            "condition": "Project::GUID-vcf-filtering"
-        },
-        {
-            "id": "GUID-demo-lfi-project-collaborator",
-            "userId": "42424242-4242-4242-4242-424242424242",
-            "roleId": "MinimalApi::Role::ProjectCollaborator",
-            "condition": "Project::GUID-large-file-ingestion"
-        },
-        {
-            "id": "GUID-demo-vcf-project-viewer",
-            "userId": "42424242-4242-4242-4242-424242424242",
-            "roleId": "MinimalApi::Role::ProjectViewer",
-            "condition": "Project::GUID-vcf-filtering"
+            "id": "gvcf",
+            "name": "gVCF",
+            "description": "Genome VCF"
         }
     ]
 }
