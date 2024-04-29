@@ -42,19 +42,13 @@ public class ProjectService : IProjectService
 
     public async Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId)
     {
-        //// approach 1: explicit requirement
-        //var authResult = await _authorizationService.AuthorizeAsync(
-        //    principal,
-        //    new OperationRequirement()
-        //    {
-        //        Operation = "MinimalApi::Action::ReadProject",
-        //        Condition = $"Project::{projectId}"
-        //    });
-
-        // approach 2: policy
         var authResult = await _authorizationService.AuthorizeAsync(
             principal,
-            $"MinimalApi::Action::ReadProject:Project::{projectId}");
+            new OperationRequirement()
+            {
+                Operation = "MinimalApi::Action::ReadProject",
+                Condition = $"Project::{projectId}"
+            });
 
         if (!authResult.Succeeded)
         {
@@ -119,11 +113,17 @@ public class ProjectService : IProjectService
         string userId,
         string role)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::CreateProjectUser",
-            $"Project::{projectId}"))
+        var authResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement()
+            {
+                Operation = "MinimalApi::Action::CreateProjectUser",
+                Condition = $"Project::{projectId}"
+            });
+
+        if (!authResult.Succeeded)
         {
-            return ServiceResult.Forbidden();
+            return ServiceResult<Project>.Forbidden(authResult);
         }
 
         // TODO: better role validation

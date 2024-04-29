@@ -10,7 +10,7 @@ public static class AuthorizationServiceExtensions
     public static Task<AuthorizationResult> AuthorizeAsync(
         this IAuthorizationService service,
         ClaimsPrincipal user,
-        IEnumerable<IAuthorizationRequirement> requirements)
+        params IAuthorizationRequirement[] requirements)
     {
         return service.AuthorizeAsync(user, default, requirements);
     }
@@ -18,8 +18,8 @@ public static class AuthorizationServiceExtensions
     public static Task<AuthorizationResult> AuthorizeAsync(
         this IAuthorizationService service,
         ClaimsPrincipal user,
-        IAuthorizationRequirement requirement)
+        string policyName)
     {
-        return service.AuthorizeAsync(user, default, requirement);
+        return service.AuthorizeAsync(user, default, policyName);
     }
 }

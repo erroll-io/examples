@@ -1,19 +1,19 @@
-    using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
-    namespace MinimalApi;
+namespace MinimalApi;
 
-    public class OperationRequirement : IAuthorizationRequirement
+public class OperationRequirement : IAuthorizationRequirement
+{
+    public string Operation { get; set; }
+    public string Condition { get; set; }
+
+    public OperationRequirement()
     {
-        public string Operation { get; set; }
-        public string Condition { get; set; }
-
-        public OperationRequirement()
-        {
-        }
-
-        public OperationRequirement(string operation, string condition)
-        {
-            Operation = operation;
-            Condition = condition;
-        }
     }
+
+    public OperationRequirement(string operation, string condition)
+    {
+        Operation = operation;
+        Condition = condition;
+    }
+}

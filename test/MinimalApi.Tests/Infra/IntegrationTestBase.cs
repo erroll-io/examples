@@ -36,6 +36,8 @@ public abstract class IntegrationTestBase
 
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton<AuthClaimsTransformation>();
+        builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
+        builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
         builder.Services.AddSingleton<ClaimsPrincipalFactory>();
 
         builder.Services.AddSingleton(Options.Create(DynamoConfig));

@@ -7,18 +7,12 @@ namespace MinimalApi;
 
 public class AuthorizationPolicyProvider : DefaultAuthorizationPolicyProvider
 {
-    private static Dictionary<string, string> _policies = new Dictionary<string, string>()
-    {
-        ["CanCreateProject"] = "MinimalApi::Action::CreateProject",
-        ["CanReadProject"] = "MinimalApi::Action::ReadProject:Project::{projectId}",
-    };
-
     public AuthorizationPolicyProvider(IOptions<AuthorizationOptions> options)
         : base(options)
     {
     } 
 
-    public override Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
+    public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         // let's assume policy names like:
         // "MinimalApi::Action::GetProject:Project:42"
@@ -28,19 +22,11 @@ public class AuthorizationPolicyProvider : DefaultAuthorizationPolicyProvider
 
         var policy = new AuthorizationPolicyBuilder("Bearer");
 
-        // method 1
-        {
-            var actionConditionSplits = new System.Text.RegularExpressions.Regex("(?<!:):(?!:)").Split(policyName);
-            var action = actionConditionSplits[0];
-            var condition = actionConditionSplits[1];
+        var actionConditionSplits = new System.Text.RegularExpressions.Regex("(?<!:):(?!:)").Split(policyName);
+        var action = actionConditionSplits[0];
+        var condition = actionConditionSplits[1];
 
-            policy.AddRequirements(new OperationRequirement(action, condition));
-        }
-
-        // method 2
-        {
-            policy.RequireClaim("permission", policyName);
-        }
+        policy.AddRequirements(new OperationRequirement(action, condition));
 
         return Task.FromResult(policy.Build());
     }
