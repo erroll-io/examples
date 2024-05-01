@@ -101,7 +101,7 @@ public static class DataEndpoints
 
         if (!httpContextAccessor.HttpContext.User.HasPermission(
             "MinimalApi::Action::UpdateData",
-            $"DataRecord::{dataRecordId}"))
+            $"MinimalApi::DataRecord::{dataRecordId}"))
         {
             return Results.Forbid();
         }

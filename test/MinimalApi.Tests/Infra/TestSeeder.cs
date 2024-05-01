@@ -264,8 +264,6 @@ public class TestSeeder
     {
         foreach (var seedUser in seedData.Users)
         {
-            var doSave = false;
-
             var user = await _usersService.GetUser(seedUser.Id);
 
             if (user != default)
@@ -285,35 +283,17 @@ public class TestSeeder
     {
         foreach (var seedUserRole in seedData.UserRoles)
         {
-            var doSave = false;
-
-            var userRole = await _userRoleService.GetUserRole(seedUserRole.Id);
+            var userRole = await _userRoleService.GetUserRole(
+                seedUserRole.UserId,
+                seedUserRole.RoleId,
+                seedUserRole.Condition);
 
             if (userRole == default)
             {
-                userRole = new UserRole()
-                {
-                    Id = seedUserRole.Id,
-                    UserId = seedUserRole.UserId,
-                    RoleId = seedUserRole.RoleId,
-                    Condition = seedUserRole.Condition,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                doSave = true;
-            }
-            else
-            {
-                if (userRole.Condition != seedUserRole.Condition)
-                {
-                    userRole.Condition = seedUserRole.Condition;
-                    doSave = true;
-                }
-            }
-
-            if (doSave)
-            {
-                await _userRoleService.SaveUserRole(userRole);
+                userRole = await _userRoleService.CreateUserRole(
+                    seedUserRole.UserId,
+                    seedUserRole.RoleId,
+                    seedUserRole.Condition);
             }
         }
     }

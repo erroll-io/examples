@@ -14,18 +14,21 @@ public class AuthClaimsTransformation : IClaimsTransformation
 {
     private readonly ILogger _logger;
     private readonly IUserService _userService;
-    private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserRoleService _userRoleService;
+    private readonly IRoleService _roleService;
 
     private bool _isHandled = false;
 
     public AuthClaimsTransformation(
         ILogger<AuthClaimsTransformation> logger,
         IUserService userService,
-        IAuthClaimsService authClaimsService)
+        IUserRoleService userRoleService,
+        IRoleService roleService)
     {
         _logger = logger;
         _userService = userService;
-        _authClaimsService = authClaimsService;
+        _userRoleService = userRoleService;
+        _roleService = roleService;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -35,9 +38,7 @@ public class AuthClaimsTransformation : IClaimsTransformation
             return principal;
         }
 
-        // we'll grab claims from our own store, but they could alternatively
-        // be coming from a different service (our own, or third-party)
-        var principalClaims = (await _authClaimsService.GetUserClaims(principal)).ToList();
+        var principalClaims = (await GetUserClaims(principal)).ToList();
 
         if (principalClaims != default && principalClaims.Any())
         {
@@ -52,5 +53,37 @@ public class AuthClaimsTransformation : IClaimsTransformation
         _isHandled = true;
 
         return principal;
+    }
+
+    private async Task<IEnumerable<Claim>> GetUserClaims(ClaimsPrincipal principal)
+    {
+        // TODO: claims caching
+
+        var userResult = await _userService.GetCurrentUser(principal);
+
+        var claims = new List<Claim>()
+        {
+            new Claim("username", userResult.Result.Id)
+        };
+
+        // TODO: improve this
+        if (_userRoleService is AvpUserRoleService)
+            return claims;
+
+        var userRoles = await _userRoleService.GetUserRolesByUserId(userResult.Result.Id);
+
+        var tasks = userRoles.Select(async (userRole) => 
+        {
+            var rolePermissions = await _roleService.GetRolePermissions(userRole.RoleId);
+
+            return rolePermissions.Select(permission =>
+                new Claim("permission", $"{permission.PermissionId}:{userRole.Condition}"));
+        });
+
+        var results = await Task.WhenAll(tasks);
+        
+        claims.AddRange(results.SelectMany(r => r));
+
+        return claims.ToList();
     }
 }

@@ -223,33 +223,17 @@ public class DynamoSeeder
         {
             var doSave = false;
 
-            var userRole = await _userRoleService.GetUserRole(seedUserRole.Id);
+            var userRole = await _userRoleService.GetUserRole(
+                seedUserRole.UserId,
+                seedUserRole.RoleId,
+                seedUserRole.Condition);
 
             if (userRole == default)
             {
-                userRole = new UserRole()
-                {
-                    Id = seedUserRole.Id,
-                    UserId = seedUserRole.UserId,
-                    RoleId = seedUserRole.RoleId,
-                    Condition = seedUserRole.Condition,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                doSave = true;
-            }
-            else
-            {
-                if (userRole.Condition != seedUserRole.Condition)
-                {
-                    userRole.Condition = seedUserRole.Condition;
-                    doSave = true;
-                }
-            }
-
-            if (doSave)
-            {
-                await _userRoleService.SaveUserRole(userRole);
+                userRole = await _userRoleService.CreateUserRole(
+                    seedUserRole.UserId,
+                    seedUserRole.RoleId,
+                    seedUserRole.Condition);
             }
         }
     }

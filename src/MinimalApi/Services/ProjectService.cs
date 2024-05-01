@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
@@ -25,18 +24,18 @@ public class ProjectService : IProjectService
 {
     private readonly IAuthorizationService _authorizationService;
     private readonly IAmazonDynamoDB _dynamoClient;
-    private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserRoleService _userRoleService;
     private readonly DynamoConfig _dynamoConfig;
 
     public ProjectService(
         IAuthorizationService authorizationService,
         IAmazonDynamoDB dynamoClient,
-        IAuthClaimsService authClaimsService,
+        IUserRoleService userRoleService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _authorizationService = authorizationService;
         _dynamoClient = dynamoClient;
-        _authClaimsService = authClaimsService;
+        _userRoleService = userRoleService;
         _dynamoConfig = dynamoConfigOptions.Value;
     }
 
@@ -47,7 +46,7 @@ public class ProjectService : IProjectService
             new OperationRequirement()
             {
                 Operation = "MinimalApi::Action::ReadProject",
-                Condition = $"Project::{projectId}"
+                Condition = $"MinimalApi::Project:{projectId}"
             });
 
         if (!authResult.Succeeded)
@@ -76,9 +75,10 @@ public class ProjectService : IProjectService
     // TODO: projection expression?
     public async Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal)
     {
-        var projectIds = principal.GetResourceIdsForPermissionCondition(
+        var projectIds = await _userRoleService.GetUserRoleConditionValues(
+            principal,
             "MinimalApi::Action::ReadProject",
-            "Project");
+            "MinimalApi::Project");
 
         if (!projectIds.Any())
         {
@@ -118,7 +118,7 @@ public class ProjectService : IProjectService
             new OperationRequirement()
             {
                 Operation = "MinimalApi::Action::CreateProjectUser",
-                Condition = $"Project::{projectId}"
+                Condition = $"MinimalApi::Project:{projectId}"
             });
 
         if (!authResult.Succeeded)
@@ -132,10 +132,10 @@ public class ProjectService : IProjectService
             return ServiceResult.Failure("Invalid role.");
         }
 
-        await _authClaimsService.CreateUserRole(
+        await _userRoleService.CreateUserRole(
             userId,
             role,
-            $"Project::{projectId}");
+            $"MinimalApi::Project:{projectId}");
 
         return ServiceResult.Success();
     }
@@ -144,16 +144,18 @@ public class ProjectService : IProjectService
         ClaimsPrincipal principal,
         string projectId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadProjectData",
-            $"Project::{projectId}"))
-        {
-            return ServiceResult<IEnumerable<ProjectUser>>.Forbidden();
-        }
+        var authorizationResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement(
+                "MinimalApi::Action::ReadProjectData",
+                $"MinimalApi::Project:{projectId}"));
 
-        var userRoles = await _authClaimsService.GetUserRolesByCondition(
+        if (!authorizationResult.Succeeded)
+            return ServiceResult<IEnumerable<ProjectUser>>.Forbidden();
+
+        var userRoles = await _userRoleService.GetUserRolesByRoleCondition(
             "MinimalApi::Role::Project",
-            $"Project::{projectId}",
+            $"MinimalApi::Project:{projectId}",
             "BEGINS_WITH");
 
         if (userRoles == default || !userRoles.Any())

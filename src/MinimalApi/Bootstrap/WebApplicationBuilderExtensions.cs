@@ -7,6 +7,7 @@ using System.Text.Json;
 
 using Amazon.DynamoDBv2;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Amazon.VerifiedPermissions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -52,6 +53,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.Configure<DynamoConfig>(builder.Configuration.GetSection<DynamoConfig>());
         builder.Services.Configure<GoogleConfig>(builder.Configuration.GetSection<GoogleConfig>());
         builder.Services.Configure<OAuthConfig>(builder.Configuration.GetSection<OAuthConfig>());
+        builder.Services.Configure<AvpConfig>(builder.Configuration.GetSection<AvpConfig>());
 
         return builder;
     }
@@ -145,9 +147,12 @@ public static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    public static WebApplicationBuilder ConfigureApplicationServices(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder ConfigureApplicationServices(
+        this WebApplicationBuilder builder,
+        bool doUseAvp = false)
     {
         builder.Services.AddTransient<IAmazonDynamoDB, AmazonDynamoDBClient>();
+        builder.Services.AddTransient<IAmazonVerifiedPermissions, AmazonVerifiedPermissionsClient>();
         // TODO: this ends up calling the same broken client factory that we
         // hacked around for the SSM configuration extension.
         //builder.Services.AddAWSService<IAmazonDynamoDB>();
@@ -157,9 +162,14 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IProjectService, ProjectService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
-        builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+        //builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IDataService, DataService>();
-        builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
+        //builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
+
+        if (doUseAvp)
+            builder.Services.AddScoped<IUserRoleService, AvpUserRoleService>();
+        else
+            builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 
         return builder;
     }

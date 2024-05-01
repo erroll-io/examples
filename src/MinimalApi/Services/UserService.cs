@@ -84,7 +84,7 @@ public class UserService : IUserService
 
     public Task<User> GetUser(ClaimsPrincipal principal)
     {
-        var principalId = principal.GetPrincipalIdentity();
+        var principalId = principal.Claims.FirstOrDefault(claim => claim.Type == "sub")?.Value;
 
         if (string.IsNullOrEmpty(principalId))
         {
@@ -96,12 +96,12 @@ public class UserService : IUserService
 
     public async Task<ServiceResult<User>> GetCurrentUser(ClaimsPrincipal principal)
     {
-        var principalId = principal?.GetPrincipalIdentity();
+        var principalId = ClaimsPrincipalLogic.GetPrincipalIdentity(principal, out var claimType);
 
-        if (string.IsNullOrEmpty(principalId))
+        if (string.IsNullOrEmpty(principalId) || string.IsNullOrEmpty(claimType))
             return ServiceResult<User>.Forbidden();
 
-        var user = await GetUser(principal); 
+        var user = claimType == "sub" ? await GetUser(principal) : await GetUser(principalId);
 
         if (user == default)
         {
