@@ -12,7 +12,7 @@ namespace MinimalApi.Tests;
 
 public abstract class IntegrationTestBase
 {
-    protected bool DoUseAvp { get; set; } = true;
+    protected bool DoUseAvp { get; set; } = false;
 
     protected static DynamoConfig DynamoConfig =>
         new DynamoConfig()
@@ -37,7 +37,7 @@ public abstract class IntegrationTestBase
 
         builder.ConfigureApplicationConfiguration("/minimal-api");
 
-        builder.ConfigureApplicationServices(doUseAvp: true);
+        builder.ConfigureApplicationServices(doUseAvp: DoUseAvp);
 
         builder.Services.AddAuthorization();
 

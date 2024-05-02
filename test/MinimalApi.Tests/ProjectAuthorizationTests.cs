@@ -190,6 +190,6 @@ public class ProjectAuthorizationTests : IntegrationTestBase
         await mockUserRoleService.Received().CreateUserRole(
             Arg.Any<string>(),
             "MinimalApi::Role::ProjectCollaborator",
-            $"Project::{projectId}");
+            $"MinimalApi::Project:{projectId}");
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Amazon.VerifiedPermissions;
@@ -27,28 +26,13 @@ public class AvpOperationRequirementHandler : AuthorizationHandler<OperationRequ
         AuthorizationHandlerContext context,
         OperationRequirement requirement)
     {
-        (var conditionType, var conditionValue) = AvpUserRoleService.SplitCondition(requirement.Condition);
-
         var isAuthorizedResponse = await _avpClient.IsAuthorizedAsync(
             new IsAuthorizedRequest()
             {
                 PolicyStoreId = _avpConfig.PolicyStoreId,
-                Principal = new EntityIdentifier()
-                {
-                    EntityType = "MinimalApi::User",
-                    EntityId = context.User.GetPrincipalIdentity()
-                },
-                Action = new ActionIdentifier
-                {
-                    ActionType = "MinimalApi::Action",
-                    ActionId = requirement.Operation.Substring(requirement.Operation.LastIndexOf("::") + 2)
-                },
-                Resource = new EntityIdentifier()
-                {
-                    EntityType = conditionType,
-                    //EntityType = $"MinimalApi::{conditionType}",
-                    EntityId = conditionValue
-                }
+                Principal = context.User.ToPrincipalEntity(),
+                Action = requirement.ToActionEntity(),
+                Resource = requirement.ToResourceEntity()
             });
 
         if (isAuthorizedResponse.Decision == Decision.ALLOW)
@@ -57,6 +41,8 @@ public class AvpOperationRequirementHandler : AuthorizationHandler<OperationRequ
         }
         else
         {
+            // TODO: context
+
             context.Fail();
         }
     }

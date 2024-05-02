@@ -40,6 +40,9 @@ public class UserRoleService : IUserRoleService
         // TODO: this is cheesy, add a new index
         var userRoles = await GetUserRolesByUserId(principalId);
 
+        if (userRoles == default)
+            return default;
+
         var userRole = userRoles.FirstOrDefault(userRole =>
             userRole.RoleId == roleId && userRole.Condition == condition);
 

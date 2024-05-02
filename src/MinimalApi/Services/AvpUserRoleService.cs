@@ -47,7 +47,6 @@ public class AvpUserRoleService : IUserRoleService
         string condition)
     {
         var policyTemplateId = GetPolicyTemplateIdForRole(roleId);
-        var (resourceType, resourceId) = SplitCondition(condition);
 
         var response = await _avpClient.CreatePolicyAsync(
             new CreatePolicyRequest()
@@ -58,17 +57,8 @@ public class AvpUserRoleService : IUserRoleService
                     TemplateLinked = new TemplateLinkedPolicyDefinition()
                     {
                         PolicyTemplateId = policyTemplateId,
-                        Principal = new EntityIdentifier()
-                        {
-                            EntityType = "MinimalApi::User",
-                            EntityId = principalId
-                        },
-                        Resource = new EntityIdentifier()
-                        {
-                            EntityType = resourceType,
-                            //EntityType = $"MinimalApi::{resourceType}",
-                            EntityId = resourceId
-                        }
+                        Principal = AvpLogic.ToPrincipalEntity(principalId),
+                        Resource = AvpLogic.ToResourceEntity(condition)
                     }
                 },
                 ClientToken = Guid.NewGuid().ToString()
@@ -88,7 +78,6 @@ public class AvpUserRoleService : IUserRoleService
     public async Task<UserRole> GetUserRole(string principalId, string roleId, string condition)
     {
         var policyTemplateId = GetPolicyTemplateIdForRole(roleId);
-        var (resourceType, resourceId) = SplitCondition(condition);
 
         var response = await _avpClient.ListPoliciesAsync(
             new ListPoliciesRequest()
@@ -97,23 +86,8 @@ public class AvpUserRoleService : IUserRoleService
                 Filter = new PolicyFilter()
                 {
                     PolicyTemplateId = policyTemplateId,
-                    Principal = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = "MinimalApi::User",
-                            EntityId = principalId
-                        }
-                    },
-                    Resource = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = resourceType,
-                            //EntityType = $"MinimalApi::{resourceType}",
-                            EntityId = resourceId
-                        }
-                    }
+                    Principal = AvpLogic.ToPrincipalReference(principalId),
+                    Resource = AvpLogic.ToResourceReference(condition)
                 }
             });
 
@@ -140,14 +114,7 @@ public class AvpUserRoleService : IUserRoleService
                 PolicyStoreId = _avpConfig.PolicyStoreId,
                 Filter = new PolicyFilter()
                 {
-                    Principal = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = "MinimalApi::User",
-                            EntityId = principalId
-                        }
-                    }
+                    Principal = AvpLogic.ToPrincipalReference(principalId)
                 }
             });
 
@@ -186,7 +153,6 @@ public class AvpUserRoleService : IUserRoleService
         foreach (var id in roleIds)
         {
             var policyTemplateId = GetPolicyTemplateIdForRole(id);
-            var (resourceType, resourceId) = SplitCondition(condition);
 
             var response = await _avpClient.ListPoliciesAsync(
                 new ListPoliciesRequest()
@@ -195,14 +161,7 @@ public class AvpUserRoleService : IUserRoleService
                     Filter = new PolicyFilter()
                     {
                         PolicyTemplateId = policyTemplateId,
-                        Resource = new EntityReference()
-                        {
-                            Identifier = new EntityIdentifier()
-                            {
-                                EntityType = resourceType,
-                                EntityId = resourceId
-                            }
-                        }
+                        Resource = AvpLogic.ToResourceReference(condition)
                     }
                 });
 
@@ -240,14 +199,7 @@ public class AvpUserRoleService : IUserRoleService
                 PolicyStoreId = _avpConfig.PolicyStoreId,
                 Filter = new PolicyFilter()
                 {
-                    Principal = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = "MinimalApi::User",
-                            EntityId = principal.GetPrincipalIdentity()
-                        }
-                    }
+                    Principal = principal.ToPrincipalReference()
                 }
             });
 
@@ -261,7 +213,6 @@ public class AvpUserRoleService : IUserRoleService
     public async Task DeleteUserRole(string principalId, string roleId, string condition)
     {
         var policyTemplateId = GetPolicyTemplateIdForRole(roleId);
-        var (resourceType, resourceId) = SplitCondition(condition);
 
         var response = await _avpClient.ListPoliciesAsync(
             new ListPoliciesRequest()
@@ -270,22 +221,8 @@ public class AvpUserRoleService : IUserRoleService
                 Filter = new PolicyFilter()
                 {
                     PolicyTemplateId = policyTemplateId,
-                    Principal = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = "User",
-                            EntityId = principalId
-                        }
-                    },
-                    Resource = new EntityReference()
-                    {
-                        Identifier = new EntityIdentifier()
-                        {
-                            EntityType = resourceType,
-                            EntityId = resourceId
-                        }
-                    }
+                    Principal = AvpLogic.ToPrincipalReference(principalId),
+                    Resource = AvpLogic.ToResourceReference(condition)
                 }
             });
 
@@ -303,27 +240,6 @@ public class AvpUserRoleService : IUserRoleService
                 PolicyStoreId = _avpConfig.PolicyStoreId,
                 PolicyId = response.Policies[0].PolicyId
             });
-    }
-
-    private string GetPolicyTemplateIdForRole(string roleId)
-    {
-        if (!_policyTemplateIdsByRoleId.TryGetValue(
-            roleId.Substring(roleId.LastIndexOf("::") + 2), out var policyTemplateId))
-        {
-            throw new Exception("Invalid role.");
-        }
-
-        return policyTemplateId;
-    }
-
-    internal static (string, string) SplitCondition(string condition)
-    {
-        var match = Regex.Match(condition, @"\w+(:)\w+");
-
-        if (!match.Success)
-            throw new Exception("Invalid condition.");
-
-        return (condition.Substring(0, match.Groups[1].Index), condition.Substring(match.Groups[1].Index + 1));
     }
 
     private async Task<Dictionary<string, List<string>>> ParsePolicyTemplateActions()
@@ -366,5 +282,16 @@ public class AvpUserRoleService : IUserRoleService
         }
 
         return dict;
+    }
+
+    private string GetPolicyTemplateIdForRole(string roleId)
+    {
+        if (!_policyTemplateIdsByRoleId.TryGetValue(
+            roleId.Substring(roleId.LastIndexOf("::") + 2), out var policyTemplateId))
+        {
+            throw new Exception("Invalid role.");
+        }
+
+        return policyTemplateId;
     }
 }
