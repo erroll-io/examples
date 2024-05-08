@@ -28,13 +28,33 @@
             ]
         },
         {
+            "id": "MinimalApi::Role::ProjectOwner",
+            "name": "Project Owner.",
+            "rolePermissions": [
+                { "permissionId": "MinimalApi::Action::ReadProject" },
+                { "permissionId": "MinimalApi::Action::UpdateProject" },
+                { "permissionId": "MinimalApi::Action::DeleteProject" },
+                { "permissionId": "MinimalApi::Action::CreateProjectUser" },
+                { "permissionId": "MinimalApi::Action::ReadProjectUser" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectUser" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectUser" },
+                { "permissionId": "MinimalApi::Action::CreateProjectData" },
+                { "permissionId": "MinimalApi::Action::ReadProjectData" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectData" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectData" },
+                { "permissionId": "MinimalApi::Action::CreateProjectResults" },
+                { "permissionId": "MinimalApi::Action::ReadProjectResults" },
+                { "permissionId": "MinimalApi::Action::UpdateProjectResults" },
+                { "permissionId": "MinimalApi::Action::DeleteProjectResults" }
+            ]
+        },
+        {
             "id": "MinimalApi::Role::ProjectAdmin",
             "name": "Project Administrator.",
             "description": "A project member with all project permissions.",
             "rolePermissions": [
                 { "permissionId": "MinimalApi::Action::ReadProject" },
                 { "permissionId": "MinimalApi::Action::UpdateProject" },
-                { "permissionId": "MinimalApi::Action::DeleteProject" },
                 { "permissionId": "MinimalApi::Action::CreateProjectUser" },
                 { "permissionId": "MinimalApi::Action::ReadProjectUser" },
                 { "permissionId": "MinimalApi::Action::UpdateProjectUser" },

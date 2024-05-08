@@ -37,7 +37,7 @@ public abstract class IntegrationTestBase
 
         builder.ConfigureApplicationConfiguration("/minimal-api");
 
-        builder.ConfigureApplicationServices(doUseAvp: DoUseAvp);
+        builder.ConfigureApplicationServices();
 
         builder.Services.AddAuthorization();
 

@@ -20,7 +20,7 @@ public class AvpTests
             {
                 var builder = WebApplication.CreateSlimBuilder();
                 builder.ConfigureApplicationConfiguration("/minimal-api");
-                builder.ConfigureApplicationServices(doUseAvp: true);
+                builder.ConfigureApplicationServices();
                 builder.Services.AddTransient<AvpUserRoleService>(provider =>
                     new AvpUserRoleService(
                         provider.GetRequiredService<IAmazonVerifiedPermissions>(),
