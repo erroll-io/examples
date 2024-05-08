@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
+using MinimalApi.Services;
 
 namespace MinimalApi;
 
@@ -13,6 +15,7 @@ namespace MinimalApi;
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(UserCreateRequest))]
 [JsonSerializable(typeof(UserResponse))]
+[JsonSerializable(typeof(ProjectCreateRequest))]
 [JsonSerializable(typeof(ProjectResponse))]
 [JsonSerializable(typeof(ProjectsResponse))]
 [JsonSerializable(typeof(ProjectUserResponse))]
@@ -29,6 +32,10 @@ namespace MinimalApi;
 [JsonSerializable(typeof(RolePermission))]
 [JsonSerializable(typeof(UserRole))]
 [JsonSerializable(typeof(User))]
+
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(ClaimLite))]
+[JsonSerializable(typeof(List<ClaimLite>))]
 
 #if DEBUG
 [JsonSerializable(typeof(SeedData))]

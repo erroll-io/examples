@@ -11,26 +11,38 @@ public static class ClaimsPrincipalLogic
         return GetPrincipalIdentity(user, out var _);
     }
 
-    public static string GetPrincipalIdentity(this ClaimsPrincipal user, out string claimType)
+    public static string GetPrincipalIdentity(this ClaimsPrincipal principal, out string claimType)
     {
         // Cognito `sub` values are globally unique, thus we cannot rely on them
-        // to persist after a data recovery event, so we use `username` instead.
+        // to persist after a data recovery event, so we use `principalname` instead.
 
-        var claim = user.Claims.FirstOrDefault(claim => claim.Type == "username");
+        var claim = principal.Claims.FirstOrDefault(claim => claim.Type == "username");
 
-        if (claim == default)
-            claim = user.Claims.FirstOrDefault(claim => claim.Type == "sub");
-        
         if (claim == default)
         {
-            claimType = string.Empty;
+            var sub = principal.GetSub();
 
-            return string.Empty;
+            if (string.IsNullOrEmpty(sub))
+            {
+                claimType = string.Empty;
+
+                return string.Empty;
+            }
+
+            claimType = "sub";
+            return sub;
         }
+        else
+        {
+            claimType = claim.Type;
 
-        claimType = claim.Type;
+            return claim.Value;
+        }
+    }
 
-        return claim.Value;
+    public static string GetSub(this ClaimsPrincipal principal)
+    {
+        return principal.Claims.FirstOrDefault(claim => claim.Type == "sub")?.Value;
     }
 
     public static ClaimsIdentity CloneIdentity(this ClaimsPrincipal principal)

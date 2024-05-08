@@ -15,10 +15,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -98,8 +102,9 @@ public static class WebApplicationBuilderExtensions
                 });
         builder.Services.AddAuthorization();
 
-        builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
-        builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
+        builder.Services.AddScoped<IAuthorizationService, LoggingDefaultAuthorizationService>();
+        builder.Services.AddScoped<IAuthorizationHandler, OperationRequirementHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, AvpOperationRequirementHandler>();
         //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 
         builder.Services.AddCors();
@@ -148,8 +153,8 @@ public static class WebApplicationBuilderExtensions
     }
 
     public static WebApplicationBuilder ConfigureApplicationServices(
-        this WebApplicationBuilder builder,
-        bool doUseAvp = false)
+        this WebApplicationBuilder builder
+        /*bool doUseAvp = false*/)
     {
         builder.Services.AddTransient<IAmazonDynamoDB, AmazonDynamoDBClient>();
         builder.Services.AddTransient<IAmazonVerifiedPermissions, AmazonVerifiedPermissionsClient>();
@@ -162,15 +167,45 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IProjectService, ProjectService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
-        //builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IDataService, DataService>();
-        //builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
 
-        if (doUseAvp)
-            builder.Services.AddScoped<IUserRoleService, AvpUserRoleService>();
-        else
-            builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+        builder.Services.AddScoped<UserRoleService>();
+        builder.Services.AddScoped<AvpUserRoleService>();
 
+        builder.Services.AddTransient<IOptions<AuthConfig>>(provider =>
+        {
+            StringValues doUseAvpHeader = string.Empty;
+            provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
+                .Request.Headers.TryGetValue("X-MINIMAL-API-USE-AVP", out doUseAvpHeader);
+
+            return new Options<AuthConfig>(
+                new AuthConfig()
+                {
+                    DoUseAvp = string.IsNullOrEmpty(doUseAvpHeader) ? false : bool.Parse(doUseAvpHeader)
+                });
+        });
+
+        builder.Services.AddScoped<IUserRoleService>(provider =>
+        {
+            return provider.GetRequiredService<IOptions<AuthConfig>>().Value.DoUseAvp
+                ? provider.GetRequiredService<AvpUserRoleService>()
+                : provider.GetRequiredService<UserRoleService>();
+        });
+
+        builder.Services.AddDistributedMemoryCache();
         return builder;
     }
+}
+
+public class Options<T> : IOptions<T>
+    where T : class
+{
+    private readonly T _value;
+
+    public Options(T value)
+    {
+        _value = value;
+    }
+
+    public T Value => _value;
 }

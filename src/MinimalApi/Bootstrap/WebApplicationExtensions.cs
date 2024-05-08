@@ -1,3 +1,4 @@
+using Amazon;
 using Microsoft.AspNetCore.Builder;
 
 namespace MinimalApi;
@@ -25,6 +26,7 @@ public static class WebApplicationExtensions
         app.MapPut("/users/{id}", UsersEndpoints.UpdateUser);
         app.MapPut("/users/current", UsersEndpoints.UpdateCurrentUser);
 
+        app.MapPost("/projects", ProjectsEndpoints.CreateProject);
         app.MapGet("/projects", ProjectsEndpoints.GetProjects);
         app.MapGet("/projects/{projectId}", ProjectsEndpoints.GetProject);
         app.MapGet("/projects/{projectId}/users", ProjectsEndpoints.GetProjectUsers);

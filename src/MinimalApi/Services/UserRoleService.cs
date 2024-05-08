@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
@@ -16,7 +17,10 @@ public class UserRoleService : IUserRoleService
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly DynamoConfig _dynamoConfig;
 
-    public UserRoleService(IAmazonDynamoDB dynamoClient, IOptions<DynamoConfig> dynamoConfigOptions)
+    public UserRoleService(
+        IDistributedCache cache,
+        IAmazonDynamoDB dynamoClient,
+        IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _dynamoClient = dynamoClient;
         _dynamoConfig = dynamoConfigOptions.Value;

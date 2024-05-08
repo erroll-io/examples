@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Amazon.VerifiedPermissions;
@@ -37,7 +36,14 @@ public class AvpUserRoleService : IUserRoleService
             () => _avpConfig.RoleTemplates,
             true);
         _policyTemplateIdsByActionLazy = new Lazy<Dictionary<string, List<string>>>(
-            () => ParsePolicyTemplateActions().Result,
+            () => AvpLogic.ParsePolicyTemplateActions(
+                Task.WhenAll(_policyTemplateIdsByRoleId.Values.Select(templateId =>
+                    avpClient.GetPolicyTemplateAsync(
+                        new GetPolicyTemplateRequest()
+                        {
+                            PolicyStoreId = _avpConfig.PolicyStoreId,
+                            PolicyTemplateId = templateId
+                        }))).Result),
             true);
     }
 
@@ -184,8 +190,6 @@ public class AvpUserRoleService : IUserRoleService
         string action,
         string conditionType)
     {
-        //action = action.TrimStart("MinimalApi::");
-
         if (!_policyTemplateIdsByAction.TryGetValue(action, out var policyTemplateIdsByAction))
             throw new Exception($"Unknown action '{action}'.");
 
@@ -240,48 +244,6 @@ public class AvpUserRoleService : IUserRoleService
                 PolicyStoreId = _avpConfig.PolicyStoreId,
                 PolicyId = response.Policies[0].PolicyId
             });
-    }
-
-    private async Task<Dictionary<string, List<string>>> ParsePolicyTemplateActions()
-    {
-        var getPolicyTemplateTasks = _policyTemplateIdsByRoleId.Values.Select(templateId =>
-            _avpClient.GetPolicyTemplateAsync(
-                new GetPolicyTemplateRequest()
-                {
-                    PolicyStoreId = _avpConfig.PolicyStoreId,
-                    PolicyTemplateId = templateId
-                }));
-
-        var policyTemplates = await Task.WhenAll(getPolicyTemplateTasks);
-
-        var permits = new Regex(@"permit\s?\((.*)\)", RegexOptions.Compiled | RegexOptions.Singleline);
-        var actions = new Regex(@"action in \[(.*)\]", RegexOptions.Compiled | RegexOptions.Singleline);
-
-        var dict = new Dictionary<string, List<string>>();
-
-        foreach (var template in policyTemplates)
-        {
-            var permitsMatch = permits.Match(template.Statement);
-
-            if (!permitsMatch.Success)
-                continue;
-            
-            var actionsMatch = actions.Match(permitsMatch.Groups[1].Value);
-
-            if (!actionsMatch.Success)
-                continue;
-            
-            foreach (var action in actionsMatch.Groups[1].Value.Split(',')
-                .Select(p => p.Trim().Replace("\"", "")))
-            {
-                if (!dict.ContainsKey(action))
-                    dict[action] = new List<string>();
-
-                dict[action].Add(template.PolicyTemplateId);
-            }
-        }
-
-        return dict;
     }
 
     private string GetPolicyTemplateIdForRole(string roleId)

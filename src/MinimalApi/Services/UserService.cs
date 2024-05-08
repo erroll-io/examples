@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
 
@@ -16,6 +17,7 @@ public interface IUserService
     Task<User> CreateUser(UserCreateParams userCreateParams);
     Task<User> GetUser(string id);
     Task<ServiceResult<User>> GetCurrentUser(ClaimsPrincipal principal);
+    Task<string> GetCurrentUserId(ClaimsPrincipal principal);
     Task<User> SaveUser(User user);
     Task UpdateUser(string id, UserCreateParams updateParams);
     Task UpdateCurrentUser(ClaimsPrincipal principal, UserCreateParams updateParams);
@@ -24,6 +26,7 @@ public interface IUserService
 public class UserService : IUserService
 {
     private readonly ILogger _logger;
+    private readonly IDistributedCache _cache;
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly IHasher _hasher;
     private readonly DynamoConfig _dynamoConfig;
@@ -32,12 +35,15 @@ public class UserService : IUserService
         ILogger<UserService> logger,
         IAmazonDynamoDB dynamoClient,
         IHasher hasher,
-        IOptions<DynamoConfig> dynamoConfigOptions)
+        IOptions<DynamoConfig> dynamoConfigOptions,
+        IDistributedCache cache = default)
     {
         _logger = logger;
+        _cache = cache;
         _dynamoClient = dynamoClient;
         _hasher = hasher;
         _dynamoConfig = dynamoConfigOptions.Value;
+        _cache = cache;
     }
 
     public async Task<User> CreateUser(UserCreateParams userCreateParams)
@@ -122,6 +128,39 @@ public class UserService : IUserService
         }
         
         return ServiceResult<User>.Success(user);
+    }
+
+    public async Task<string> GetCurrentUserId(ClaimsPrincipal principal)
+    {
+        var sub = principal.GetSub();
+        var userId = string.Empty;
+
+        if (string.IsNullOrEmpty(sub))
+            return string.Empty;
+
+        if (_cache != default)
+        {
+            userId = await _cache.Get<string>(sub);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                var userResult = await GetCurrentUser(principal);
+                userId = userResult.Result.Id;
+
+                await _cache.Set(sub, userId);
+            }
+            else
+            {
+                _logger.LogInformation($"Using cached userId for {sub}.");
+            }
+        }
+        else
+        {
+            var userResult = await GetCurrentUser(principal);
+            userId = userResult.Result.Id;
+        }
+
+        return userId;
     }
 
     public async Task UpdateUser(string id, UserCreateParams updateParams)

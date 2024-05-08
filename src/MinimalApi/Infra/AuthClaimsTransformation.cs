@@ -1,10 +1,13 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using MinimalApi.Services;
 
@@ -13,76 +16,92 @@ namespace MinimalApi;
 public class AuthClaimsTransformation : IClaimsTransformation
 {
     private readonly ILogger _logger;
+    private readonly IDistributedCache _cache;
     private readonly IUserService _userService;
     private readonly IUserRoleService _userRoleService;
     private readonly IRoleService _roleService;
+    private readonly AuthConfig _authConfig;
 
     private bool _isHandled = false;
 
     public AuthClaimsTransformation(
         ILogger<AuthClaimsTransformation> logger,
+        IDistributedCache cache,
         IUserService userService,
         IUserRoleService userRoleService,
-        IRoleService roleService)
+        IRoleService roleService,
+        IOptions<AuthConfig> authConfigOptions)
     {
         _logger = logger;
+        _cache = cache;
         _userService = userService;
         _userRoleService = userRoleService;
         _roleService = roleService;
+        _authConfig = authConfigOptions.Value;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        if (principal.Identity == default || !principal.Identity.IsAuthenticated || _isHandled)
+        var sw = new Stopwatch();
+
+        sw.Start();
+        if (principal.Identity != default && principal.Identity.IsAuthenticated && !_isHandled)
         {
-            return principal;
-        }
+            var principalClaims = (await GetUserClaims(principal)).ToList();
 
-        var principalClaims = (await GetUserClaims(principal)).ToList();
+            if (principalClaims != default && principalClaims.Any())
+            {
+                var identity = principal.CloneIdentity();
 
-        if (principalClaims != default && principalClaims.Any())
-        {
-            var identity = principal.CloneIdentity();
+                identity.AddClaims(principalClaims.Select(claim => new Claim(claim.Type, claim.Value)));
 
-            identity.AddClaims(principalClaims);
+                principal = new ClaimsPrincipal(identity);
+            }
 
             _isHandled = true;
-            return new ClaimsPrincipal(identity);
         }
+        sw.Stop();
 
-        _isHandled = true;
+        _logger.LogTrace($"MinimalApi::Metric::{(_authConfig.DoUseAvp ? "AVP" : "")}ClaimsTxEvalTimeMs: {sw.ElapsedMilliseconds}");
 
         return principal;
     }
 
-    private async Task<IEnumerable<Claim>> GetUserClaims(ClaimsPrincipal principal)
+    private async Task<IEnumerable<ClaimLite>> GetUserClaims(ClaimsPrincipal principal)
     {
-        // TODO: claims caching
+        var userId = await _userService.GetCurrentUserId(principal);
 
-        var userResult = await _userService.GetCurrentUser(principal);
+        var claims = await _cache.Get<List<ClaimLite>>(userId);
 
-        var claims = new List<Claim>()
+        if (claims != default && claims.Any())
         {
-            new Claim("username", userResult.Result.Id)
+            _logger.LogInformation($"Using cached claims for {userId}.");
+            return claims;
+        }
+
+        claims = new List<ClaimLite>()
+        {
+            new ClaimLite("username", userId)
         };
 
-        // TODO: improve this
-        if (_userRoleService is AvpUserRoleService)
-            return claims;
-
-        var userRoles = await _userRoleService.GetUserRolesByUserId(userResult.Result.Id);
-
-        var tasks = userRoles.Select(async (userRole) => 
+        if (!_authConfig.DoUseAvp)
         {
-            var rolePermissions = await _roleService.GetRolePermissions(userRole.RoleId);
+            var userRoles = await _userRoleService.GetUserRolesByUserId(userId);
 
-            return rolePermissions.Select(permission =>
-                new Claim("permission", $"{permission.PermissionId}:{userRole.Condition}"));
-        });
+            var tasks = userRoles.Select(async (userRole) => 
+            {
+                var rolePermissions = await _roleService.GetRolePermissions(userRole.RoleId);
 
-        var results = await Task.WhenAll(tasks);
+                return rolePermissions.Select(permission =>
+                    new ClaimLite("permission", $"{permission.PermissionId}:{userRole.Condition}"));
+            });
+
+            var results = await Task.WhenAll(tasks);
+            
+            claims.AddRange(results.SelectMany(r => r));
+        }
         
-        claims.AddRange(results.SelectMany(r => r));
+        await _cache.Set(userId, claims);
 
         return claims.ToList();
     }

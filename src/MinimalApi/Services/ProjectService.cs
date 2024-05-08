@@ -13,6 +13,11 @@ namespace MinimalApi.Services;
 
 public interface IProjectService
 {
+    Task<ServiceResult<Project>> CreateProject(
+        ClaimsPrincipal principal,
+        string projectName,
+        string description,
+        string metadata);
     Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId);
     Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal);
     Task<ServiceResult> CreateProjectUser(ClaimsPrincipal principal, string projectId, string userId, string role);
@@ -37,6 +42,45 @@ public class ProjectService : IProjectService
         _dynamoClient = dynamoClient;
         _userRoleService = userRoleService;
         _dynamoConfig = dynamoConfigOptions.Value;
+    }
+
+    public async Task<ServiceResult<Project>> CreateProject(
+        ClaimsPrincipal principal,
+        string name,
+        string description,
+        string metadata)
+    {
+        var userId = principal.GetPrincipalIdentity();
+
+        var existing = await GetProject(userId, name);
+
+        if (existing != default)
+            return ServiceResult<Project>.Failure();
+
+        // TODO: transaction
+        {
+            var projectId = Guid.NewGuid().ToString();
+
+            var project = new Project()
+            {
+                Id = projectId,
+                Name = name,
+                Description = description,
+                DataPath = $"s3://minimal-api.erroll.io/data/projects/{projectId}/",
+                Metadata = metadata,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await SaveProject(project);
+
+            await _userRoleService.CreateUserRole(
+                userId,
+                "MinimalApi::Role::ProjectOwner",
+                $"MinimalApi::Project:{projectId}");
+
+            return ServiceResult<Project>.Success(project);
+        }
     }
 
     public async Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId)
@@ -69,6 +113,40 @@ public class ProjectService : IProjectService
             });
 
         return ToProject(projectResponse.Item);
+    }
+
+    public async Task<Project> GetProject(string userId, string name)
+    {
+        var response = await _dynamoClient.QueryAsync(
+            new QueryRequest()
+            {
+                TableName = _dynamoConfig.ProjectsTableName,
+                IndexName = _dynamoConfig.ProjectsTableCreatedByIndexName,
+                KeyConditions = new Dictionary<string, Condition>()
+                {
+                    ["created_by"] = new Condition()
+                    {
+                        ComparisonOperator = ComparisonOperator.EQ,
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(userId)
+                        }
+                    },
+                    ["name"] = new Condition()
+                    {
+                        ComparisonOperator = ComparisonOperator.EQ,
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(name)
+                        }
+                    }
+                }
+            });
+
+        if (!response.Items.Any())
+            return default;
+
+        return ToProject(response.Items.First());
     }
 
     // TODO: pagination
@@ -206,6 +284,11 @@ public class ProjectService : IProjectService
         if (!string.IsNullOrEmpty(project.Metadata))
             item["metadata"] = new AttributeValue(project.Metadata);
 
+        if (project.CreatedBy == default)
+            throw new Exception("Missing CreatedBy.");
+
+        item["created_by"] = new AttributeValue(project.CreatedBy);
+
         if (project.CreatedAt == default)
             throw new Exception("Missing CreatedAt.");
 
@@ -228,6 +311,7 @@ public class ProjectService : IProjectService
             Description = item.ContainsKey("description") ? item["description"].S : default,
             DataPath = item.ContainsKey("data_path") ? item["data_path"].S : default,
             Metadata = item.ContainsKey("metadata") ? item["metadata"].S : default,
+            CreatedBy = item.ContainsKey("created_by") ? item["created_by"].S : default,
             CreatedAt = item.ContainsKey("created_at") ? DateTime.Parse(item["created_at"].S) : default,
             ModifiedAt = item.ContainsKey("modified_at") ? DateTime.Parse(item["modified_at"].S) : default,
         };

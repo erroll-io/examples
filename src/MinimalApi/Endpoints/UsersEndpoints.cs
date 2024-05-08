@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 using MinimalApi.Services;
 
@@ -48,8 +49,11 @@ public static class UsersEndpoints
     [Authorize]
     public static async Task<IResult> GetCurrentUser(
         [FromServices] IUserService usersService,
+        [FromServices] IOptionsSnapshot<AuthConfig> authConfigSnapshot,
         [FromServices] IHttpContextAccessor httpContextAccessor)
     {
+        var doUseAvp = authConfigSnapshot.Value.DoUseAvp;
+
         var userResult = await usersService.GetCurrentUser(httpContextAccessor.HttpContext.User);
 
         if (!userResult.AuthorizationResult.Succeeded)
