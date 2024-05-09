@@ -8,15 +8,15 @@ using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Authorization;
 
-public class LoggingDefaultAuthorizationService : DefaultAuthorizationService
+public class TracingDefaultAuthorizationService : DefaultAuthorizationService
 {
     private readonly ILogger _logger;
     private readonly MinimalApi.AuthConfig _authConfig;
 
-    public LoggingDefaultAuthorizationService(
+    public TracingDefaultAuthorizationService(
         IAuthorizationPolicyProvider policyProvider,
         IAuthorizationHandlerProvider handlers,
-        ILogger<LoggingDefaultAuthorizationService> logger,
+        ILogger<TracingDefaultAuthorizationService> logger,
         IAuthorizationHandlerContextFactory contextFactory,
         IAuthorizationEvaluator evaluator,
         IOptions<AuthorizationOptions> options,

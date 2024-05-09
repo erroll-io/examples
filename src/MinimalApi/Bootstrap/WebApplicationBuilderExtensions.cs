@@ -98,7 +98,7 @@ public static class WebApplicationBuilderExtensions
                 });
         builder.Services.AddAuthorization();
 
-        builder.Services.AddScoped<IAuthorizationService, LoggingDefaultAuthorizationService>();
+        builder.Services.AddScoped<IAuthorizationService, TracingDefaultAuthorizationService>();
         builder.Services.AddScoped<IAuthorizationHandler, OperationRequirementHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, AvpOperationRequirementHandler>();
         //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
