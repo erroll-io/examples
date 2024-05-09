@@ -14,7 +14,7 @@ public static class ClaimsPrincipalLogic
     public static string GetPrincipalIdentity(this ClaimsPrincipal principal, out string claimType)
     {
         // Cognito `sub` values are globally unique, thus we cannot rely on them
-        // to persist after a data recovery event, so we use `principalname` instead.
+        // to persist after a data recovery event, so we use `username` instead.
 
         var claim = principal.Claims.FirstOrDefault(claim => claim.Type == "username");
 

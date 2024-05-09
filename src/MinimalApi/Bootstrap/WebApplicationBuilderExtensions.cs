@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
@@ -15,9 +14,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -152,9 +148,7 @@ public static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    public static WebApplicationBuilder ConfigureApplicationServices(
-        this WebApplicationBuilder builder
-        /*bool doUseAvp = false*/)
+    public static WebApplicationBuilder ConfigureApplicationServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddTransient<IAmazonDynamoDB, AmazonDynamoDBClient>();
         builder.Services.AddTransient<IAmazonVerifiedPermissions, AmazonVerifiedPermissionsClient>();
@@ -192,7 +186,7 @@ public static class WebApplicationBuilderExtensions
                 : provider.GetRequiredService<UserRoleService>();
         });
 
-        builder.Services.AddDistributedMemoryCache();
+        //builder.Services.AddDistributedMemoryCache();
         return builder;
     }
 }

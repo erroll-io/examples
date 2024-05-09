@@ -92,6 +92,7 @@ public class AvpUserRoleService : IUserRoleService
                 Filter = new PolicyFilter()
                 {
                     PolicyTemplateId = policyTemplateId,
+                    PolicyType = PolicyType.TEMPLATE_LINKED,
                     Principal = AvpLogic.ToPrincipalReference(principalId),
                     Resource = AvpLogic.ToResourceReference(condition)
                 }
@@ -124,17 +125,16 @@ public class AvpUserRoleService : IUserRoleService
                 }
             });
 
-        var foo = _roleIdsByPolicyTemplateId.ToList();
-
-        return response.Policies.Select(policyItem => new UserRole()
-        {
-            Id = policyItem.PolicyId,
-            UserId = policyItem.Principal.EntityId,
-            RoleId = _roleIdsByPolicyTemplateId[policyItem.Definition.TemplateLinked.PolicyTemplateId],
-            Condition = $"{policyItem.Resource.EntityType}:{policyItem.Resource.EntityId}",
-            CreatedAt = policyItem.CreatedDate,
-            ModifiedAt = policyItem.LastUpdatedDate
-        });
+        return response.Policies.Select(policyItem =>
+            new UserRole()
+            {
+                Id = policyItem.PolicyId,
+                UserId = policyItem.Principal.EntityId,
+                RoleId = _roleIdsByPolicyTemplateId[policyItem.Definition.TemplateLinked.PolicyTemplateId],
+                Condition = $"{policyItem.Resource.EntityType}:{policyItem.Resource.EntityId}",
+                CreatedAt = policyItem.CreatedDate,
+                ModifiedAt = policyItem.LastUpdatedDate
+            });
     }
 
     public async Task<IEnumerable<UserRole>> GetUserRolesByRoleCondition(

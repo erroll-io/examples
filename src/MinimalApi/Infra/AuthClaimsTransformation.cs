@@ -26,18 +26,18 @@ public class AuthClaimsTransformation : IClaimsTransformation
 
     public AuthClaimsTransformation(
         ILogger<AuthClaimsTransformation> logger,
-        IDistributedCache cache,
         IUserService userService,
         IUserRoleService userRoleService,
         IRoleService roleService,
-        IOptions<AuthConfig> authConfigOptions)
+        IOptions<AuthConfig> authConfigOptions,
+        IDistributedCache cache = default)
     {
         _logger = logger;
-        _cache = cache;
         _userService = userService;
         _userRoleService = userRoleService;
         _roleService = roleService;
         _authConfig = authConfigOptions.Value;
+        _cache = cache;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -71,7 +71,7 @@ public class AuthClaimsTransformation : IClaimsTransformation
     {
         var userId = await _userService.GetCurrentUserId(principal);
 
-        var claims = await _cache.Get<List<ClaimLite>>(userId);
+        var claims = _cache == default ? null : await _cache.Get<List<ClaimLite>>(userId);
 
         if (claims != default && claims.Any())
         {
@@ -101,7 +101,8 @@ public class AuthClaimsTransformation : IClaimsTransformation
             claims.AddRange(results.SelectMany(r => r));
         }
         
-        await _cache.Set(userId, claims);
+        if (_cache != default)
+            await _cache.Set(userId, claims);
 
         return claims.ToList();
     }

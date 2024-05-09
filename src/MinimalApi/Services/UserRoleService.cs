@@ -18,7 +18,6 @@ public class UserRoleService : IUserRoleService
     private readonly DynamoConfig _dynamoConfig;
 
     public UserRoleService(
-        IDistributedCache cache,
         IAmazonDynamoDB dynamoClient,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
