@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Text.Json;
 
 using Amazon.DynamoDBv2;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Amazon.VerifiedPermissions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -52,6 +53,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.Configure<DynamoConfig>(builder.Configuration.GetSection<DynamoConfig>());
         builder.Services.Configure<GoogleConfig>(builder.Configuration.GetSection<GoogleConfig>());
         builder.Services.Configure<OAuthConfig>(builder.Configuration.GetSection<OAuthConfig>());
+        builder.Services.Configure<AvpConfig>(builder.Configuration.GetSection<AvpConfig>());
 
         return builder;
     }
@@ -96,8 +98,9 @@ public static class WebApplicationBuilderExtensions
                 });
         builder.Services.AddAuthorization();
 
-        builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
-        builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
+        builder.Services.AddScoped<IAuthorizationService, TracingDefaultAuthorizationService>();
+        builder.Services.AddScoped<IAuthorizationHandler, OperationRequirementHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, AvpOperationRequirementHandler>();
         //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 
         builder.Services.AddCors();
@@ -148,6 +151,7 @@ public static class WebApplicationBuilderExtensions
     public static WebApplicationBuilder ConfigureApplicationServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddTransient<IAmazonDynamoDB, AmazonDynamoDBClient>();
+        builder.Services.AddTransient<IAmazonVerifiedPermissions, AmazonVerifiedPermissionsClient>();
         // TODO: this ends up calling the same broken client factory that we
         // hacked around for the SSM configuration extension.
         //builder.Services.AddAWSService<IAmazonDynamoDB>();
@@ -157,10 +161,46 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IProjectService, ProjectService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
-        builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IDataService, DataService>();
-        builder.Services.AddTransient<IAuthClaimsService, AuthClaimsService>();
+
+        builder.Services.AddScoped<UserRoleService>();
+        builder.Services.AddScoped<AvpUserRoleService>();
+
+        builder.Services.AddTransient<IOptions<AuthConfig>>(provider =>
+        {
+            StringValues doUseAvpHeader = string.Empty;
+            provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
+                .Request.Headers.TryGetValue("X-MINIMAL-API-USE-AVP", out doUseAvpHeader);
+
+            return new Options<AuthConfig>(
+                new AuthConfig()
+                {
+                    DoUseAvp = string.IsNullOrEmpty(doUseAvpHeader) ? false : bool.Parse(doUseAvpHeader)
+                });
+        });
+
+        builder.Services.AddScoped<IUserRoleService>(provider =>
+        {
+            return provider.GetRequiredService<IOptions<AuthConfig>>().Value.DoUseAvp
+                ? provider.GetRequiredService<AvpUserRoleService>()
+                : provider.GetRequiredService<UserRoleService>();
+        });
+
+        builder.Services.AddDistributedMemoryCache();
 
         return builder;
     }
+}
+
+public class Options<T> : IOptions<T>
+    where T : class
+{
+    private readonly T _value;
+
+    public Options(T value)
+    {
+        _value = value;
+    }
+
+    public T Value => _value;
 }

@@ -12,6 +12,21 @@ namespace MinimalApi;
 public static class ProjectsEndpoints
 {
     [Authorize]
+    public static async Task<IResult> CreateProject(
+        [FromServices] IHttpContextAccessor httpContextAccessor,
+        [FromServices] IProjectService projectService,
+        [FromBody] ProjectCreateRequest request)
+    {
+        var projectResult = await projectService.CreateProject(
+            httpContextAccessor.HttpContext.User,
+            request.Name,
+            request.Description,
+            request.Metadata);
+
+        return projectResult.FromServiceResult(project => project.ToResponse());
+    }
+
+    [Authorize]
     public static async Task<IResult> GetProjects(
         [FromServices] IHttpContextAccessor httpContextAccessor,
         [FromServices] IProjectService projectService)

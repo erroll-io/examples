@@ -34,19 +34,22 @@ public interface IDataService
 
 public class DataService : IDataService
 {
+    private readonly IAuthorizationService _authorizationService;
     private readonly IAmazonDynamoDB _dynamoClient;
-    private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserRoleService _userRoleService;
     private readonly IUserService _userService;
     private readonly DynamoConfig _dynamoConfig;
 
     public DataService(
+        IAuthorizationService authorizationService,
         IAmazonDynamoDB dynamoClient,
-        IAuthClaimsService authClaimsService,
+        IUserRoleService userRoleService,
         IUserService userService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
+        _authorizationService = authorizationService;
         _dynamoClient = dynamoClient;
-        _authClaimsService = authClaimsService;
+        _userRoleService = userRoleService;
         _userService = userService;
         _dynamoConfig = dynamoConfigOptions.Value;
     }
@@ -76,10 +79,10 @@ public class DataService : IDataService
 
             await SaveDataRecord(dataRecord);
 
-            await _authClaimsService.CreateUserRole(
+            await _userRoleService.CreateUserRole(
                 userResult.Result.Id,
                 "MinimalApi::Role::DataOwner",
-                $"DataRecord::{dataRecord.Id}");
+                $"MinimalApi::DataRecord:{dataRecord.Id}");
 
             return ServiceResult<DataRecord>.Success(dataRecord);
         }
@@ -92,12 +95,14 @@ public class DataService : IDataService
     {
         var user = await _userService.GetCurrentUser(principal);
 
-        if (!principal.HasPermission(
-            "MinimalApi::Action::CreateProjectData",
-            $"Project::{projectId}"))
-        {
+        var authorizationResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement(
+                "MinimalApi::Action::CreateProjectData",
+                $"MinimalApi::Project:{projectId}"));
+
+        if (!authorizationResult.Succeeded)
             return ServiceResult<DataRecord>.Forbidden(AuthorizationResult.Failed());
-        }
 
         // TODO: transaction
         {
@@ -131,12 +136,14 @@ public class DataService : IDataService
 
     public async Task<ServiceResult<DataRecord>> GetDataRecord(ClaimsPrincipal principal, string dataRecordId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadData",
-            $"DataRecord::{dataRecordId}"))
-        {
+        var authorizationResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement(
+                "MinimalApi::Action::ReadData",
+                $"MinimalApi::DataRecord:{dataRecordId}"));
+
+        if (!authorizationResult.Succeeded)
             return ServiceResult<DataRecord>.Forbidden(AuthorizationResult.Failed());
-        }
 
         var dataRecord = await GetDataRecord(dataRecordId);
 
@@ -166,9 +173,10 @@ public class DataService : IDataService
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
         }
 
-        var dataRecordIds = principal.GetResourceIdsForPermissionCondition(
+        var dataRecordIds = await _userRoleService.GetUserRoleConditionValues(
+            principal,
             "MinimalApi::Action::ReadData",
-            "DataRecord");
+            "MinimalApi::DataRecord");
 
         if (dataRecordIds == default || !dataRecordIds.Any())
         {
@@ -201,12 +209,14 @@ public class DataService : IDataService
         ClaimsPrincipal principal,
         string projectId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadProjectData",
-            $"Project::{projectId}"))
-        {
+        var authorizationResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement(
+                "MinimalApi::Action::ReadProjectData",
+                $"MinimalApi::Project:{projectId}"));
+
+        if (!authorizationResult.Succeeded)
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());
-        }
 
         var user = await _userService.GetCurrentUser(principal);
 

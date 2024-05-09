@@ -9,22 +9,28 @@ public class ClaimsPrincipalFactory
 {
     private readonly AuthClaimsTransformation _claimsTransformation;
 
-    public ClaimsPrincipalFactory(AuthClaimsTransformation claimsTransformation)
+    public ClaimsPrincipalFactory(AuthClaimsTransformation claimsTransformation = null)
     {
         _claimsTransformation = claimsTransformation;
     }
 
-    public Task<ClaimsPrincipal> GetClaimsPrincipal(string principalId)
+    public async Task<ClaimsPrincipal> GetClaimsPrincipal(string principalId)
     {
-        return _claimsTransformation.TransformAsync(
-            new ClaimsPrincipal(
-                new ClaimsIdentity(
-                    new []
-                    {
-                        string.IsNullOrEmpty(principalId)
-                            ? new Claim("wack", "AF")
-                            : new Claim("sub", principalId)
-                    },
-                    string.IsNullOrEmpty(principalId) ? string.Empty : "Bearer")));
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new []
+                {
+                    string.IsNullOrEmpty(principalId)
+                        ? new Claim("wack", "AF")
+                        : new Claim("sub", principalId)
+                },
+                string.IsNullOrEmpty(principalId) ? string.Empty : "Bearer"));
+
+        if (_claimsTransformation != default)
+        {
+            principal = await _claimsTransformation.TransformAsync(principal);
+        }
+
+        return principal;
     }
 }

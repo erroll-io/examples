@@ -17,7 +17,9 @@ export default defineConfig(async ({ command, mode }) => {
     },
     plugins: [
       vue(),
-      basicSsl()
+      basicSsl({
+        domains: ['*.erroll.io']
+      })
     ],
     resolve: {
       alias: {
@@ -25,6 +27,7 @@ export default defineConfig(async ({ command, mode }) => {
       }
     },
     server: {
+      host: 'local.erroll.io', 
       port: 8080,
     }
   }

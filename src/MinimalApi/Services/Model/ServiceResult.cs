@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace MinimalApi.Services;
 

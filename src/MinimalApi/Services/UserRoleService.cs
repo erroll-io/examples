@@ -2,46 +2,54 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
-
-public interface IUserRoleService
-{
-    Task<UserRole> GetUserRole(string userRoleId);
-    Task<IEnumerable<UserRole>> GetUserRolesByUserId(string userId);
-    Task<IEnumerable<UserRole>> GetUserRolesByRoleAndCondition(
-        string roleId,
-        string condition,
-        string roleComparisonOperator = null);
-    Task<UserRole> SaveUserRole(UserRole userRole);
-}
 
 public class UserRoleService : IUserRoleService
 {
     private readonly IAmazonDynamoDB _dynamoClient;
     private readonly DynamoConfig _dynamoConfig;
 
-    public UserRoleService(IAmazonDynamoDB dynamoClient, IOptions<DynamoConfig> dynamoConfigOptions)
+    public UserRoleService(
+        IAmazonDynamoDB dynamoClient,
+        IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _dynamoClient = dynamoClient;
         _dynamoConfig = dynamoConfigOptions.Value;
     }
 
-    public async Task<UserRole> GetUserRole(string userRoleId)
+    public Task<UserRole> CreateUserRole(string userId, string roleId, string condition)
     {
-        var userRole = await _dynamoClient.GetItemAsync(
-            _dynamoConfig.UserRolesTableName,
-            new Dictionary<string, AttributeValue>()
+        return SaveUserRole(
+            new UserRole()
             {
-                ["id"] = new AttributeValue(userRoleId),
+                Id = Guid.NewGuid().ToString(),
+                UserId = userId,
+                RoleId = roleId,
+                Condition = condition,
+                CreatedAt = DateTime.UtcNow
             });
+    }
 
-        return ToUserRole(userRole.Item);
+    public async Task<UserRole> GetUserRole(string principalId, string roleId, string condition)
+    {
+        // TODO: this is cheesy, add a new index
+        var userRoles = await GetUserRolesByUserId(principalId);
+
+        if (userRoles == default)
+            return default;
+
+        var userRole = userRoles.FirstOrDefault(userRole =>
+            userRole.RoleId == roleId && userRole.Condition == condition);
+
+        return userRole;
     }
 
     public async Task<IEnumerable<UserRole>> GetUserRolesByUserId(string userId)
@@ -72,7 +80,7 @@ public class UserRoleService : IUserRoleService
         return response.Items.Select(ToUserRole);
     }
 
-    public async Task<IEnumerable<UserRole>> GetUserRolesByRoleAndCondition(
+    public async Task<IEnumerable<UserRole>> GetUserRolesByRoleCondition(
         string role,
         string condition,
         string roleComparisonOperator = null)
@@ -112,6 +120,20 @@ public class UserRoleService : IUserRoleService
         }
 
         return response.Items.Select(ToUserRole);
+    }
+
+    public Task<IEnumerable<string>> GetUserRoleConditionValues(
+        ClaimsPrincipal principal,
+        string action,
+        string conditionType)
+    {
+        return Task.FromResult(
+            principal.GetResourceIdsForPermissionCondition(action, conditionType));
+    }
+
+    public Task DeleteUserRole(string userId, string roleId, string condition)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task<UserRole> SaveUserRole(UserRole userRole)

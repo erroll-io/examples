@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MinimalApi.Services;
@@ -84,8 +85,8 @@ public class DataAuthorizationTests : IntegrationTestBase
         var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
             .GetClaimsPrincipal("user-one");
 
-        var mockClaimsService = Substitute.For<IAuthClaimsService>();
-        mockClaimsService
+        var mockUserRoleService = Substitute.For<IUserRoleService>();
+        mockUserRoleService
             .CreateUserRole(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
@@ -96,8 +97,9 @@ public class DataAuthorizationTests : IntegrationTestBase
                 });
 
         var dataService = new DataService(
+            ServiceProvider.GetRequiredService<IAuthorizationService>(),
             ServiceProvider.GetRequiredService<IAmazonDynamoDB>(),
-            mockClaimsService,
+            mockUserRoleService,
             ServiceProvider.GetRequiredService<IUserService>(),
             ServiceProvider.GetRequiredService<IOptions<DynamoConfig>>());
 
@@ -112,7 +114,7 @@ public class DataAuthorizationTests : IntegrationTestBase
 
         Assert.True(dataRecordResult.IsSuccess);
 
-        await mockClaimsService.Received().CreateUserRole(
+        await mockUserRoleService.Received().CreateUserRole(
             Arg.Any<string>(),
             "MinimalApi::Role::DataOwner",
             $"DataRecord::{dataRecordResult.Result.Id}");

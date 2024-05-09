@@ -162,8 +162,8 @@ public class ProjectAuthorizationTests : IntegrationTestBase
         var principal = await ServiceProvider.GetRequiredService<ClaimsPrincipalFactory>()
             .GetClaimsPrincipal("user-one");
 
-        var mockClaimsService = Substitute.For<IAuthClaimsService>();
-        mockClaimsService
+        var mockUserRoleService = Substitute.For<IUserRoleService>();
+        mockUserRoleService
             .CreateUserRole(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
@@ -176,7 +176,7 @@ public class ProjectAuthorizationTests : IntegrationTestBase
         var projectService = new ProjectService(
             ServiceProvider.GetRequiredService<IAuthorizationService>(),
             ServiceProvider.GetRequiredService<IAmazonDynamoDB>(),
-            mockClaimsService,
+            mockUserRoleService,
             ServiceProvider.GetRequiredService<IOptions<DynamoConfig>>());
 
         var result = await projectService.CreateProjectUser(
@@ -187,9 +187,9 @@ public class ProjectAuthorizationTests : IntegrationTestBase
 
         Assert.True(result.IsSuccess);
 
-        await mockClaimsService.Received().CreateUserRole(
+        await mockUserRoleService.Received().CreateUserRole(
             Arg.Any<string>(),
             "MinimalApi::Role::ProjectCollaborator",
-            $"Project::{projectId}");
+            $"MinimalApi::Project:{projectId}");
     }
 }

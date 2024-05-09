@@ -7,13 +7,17 @@ using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
 
 public interface IProjectService
 {
+    Task<ServiceResult<Project>> CreateProject(
+        ClaimsPrincipal principal,
+        string projectName,
+        string description,
+        string metadata);
     Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId);
     Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal);
     Task<ServiceResult> CreateProjectUser(ClaimsPrincipal principal, string projectId, string userId, string role);
@@ -25,19 +29,58 @@ public class ProjectService : IProjectService
 {
     private readonly IAuthorizationService _authorizationService;
     private readonly IAmazonDynamoDB _dynamoClient;
-    private readonly IAuthClaimsService _authClaimsService;
+    private readonly IUserRoleService _userRoleService;
     private readonly DynamoConfig _dynamoConfig;
 
     public ProjectService(
         IAuthorizationService authorizationService,
         IAmazonDynamoDB dynamoClient,
-        IAuthClaimsService authClaimsService,
+        IUserRoleService userRoleService,
         IOptions<DynamoConfig> dynamoConfigOptions)
     {
         _authorizationService = authorizationService;
         _dynamoClient = dynamoClient;
-        _authClaimsService = authClaimsService;
+        _userRoleService = userRoleService;
         _dynamoConfig = dynamoConfigOptions.Value;
+    }
+
+    public async Task<ServiceResult<Project>> CreateProject(
+        ClaimsPrincipal principal,
+        string name,
+        string description,
+        string metadata)
+    {
+        var userId = principal.GetPrincipalIdentity();
+
+        var existing = await GetProject(userId, name);
+
+        if (existing != default)
+            return ServiceResult<Project>.Failure();
+
+        // TODO: transaction
+        {
+            var projectId = Guid.NewGuid().ToString();
+
+            var project = new Project()
+            {
+                Id = projectId,
+                Name = name,
+                Description = description,
+                DataPath = $"s3://minimal-api.erroll.io/data/projects/{projectId}/",
+                Metadata = metadata,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await SaveProject(project);
+
+            await _userRoleService.CreateUserRole(
+                userId,
+                "MinimalApi::Role::ProjectOwner",
+                $"MinimalApi::Project:{projectId}");
+
+            return ServiceResult<Project>.Success(project);
+        }
     }
 
     public async Task<ServiceResult<Project>> GetProject(ClaimsPrincipal principal, string projectId)
@@ -47,7 +90,7 @@ public class ProjectService : IProjectService
             new OperationRequirement()
             {
                 Operation = "MinimalApi::Action::ReadProject",
-                Condition = $"Project::{projectId}"
+                Condition = $"MinimalApi::Project:{projectId}"
             });
 
         if (!authResult.Succeeded)
@@ -72,13 +115,48 @@ public class ProjectService : IProjectService
         return ToProject(projectResponse.Item);
     }
 
+    public async Task<Project> GetProject(string userId, string name)
+    {
+        var response = await _dynamoClient.QueryAsync(
+            new QueryRequest()
+            {
+                TableName = _dynamoConfig.ProjectsTableName,
+                IndexName = _dynamoConfig.ProjectsTableCreatedByIndexName,
+                KeyConditions = new Dictionary<string, Condition>()
+                {
+                    ["created_by"] = new Condition()
+                    {
+                        ComparisonOperator = ComparisonOperator.EQ,
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(userId)
+                        }
+                    },
+                    ["name"] = new Condition()
+                    {
+                        ComparisonOperator = ComparisonOperator.EQ,
+                        AttributeValueList = new List<AttributeValue>()
+                        {
+                            new AttributeValue(name)
+                        }
+                    }
+                }
+            });
+
+        if (!response.Items.Any())
+            return default;
+
+        return ToProject(response.Items.First());
+    }
+
     // TODO: pagination
     // TODO: projection expression?
     public async Task<ServiceResult<IEnumerable<Project>>> GetProjects(ClaimsPrincipal principal)
     {
-        var projectIds = principal.GetResourceIdsForPermissionCondition(
+        var projectIds = await _userRoleService.GetUserRoleConditionValues(
+            principal,
             "MinimalApi::Action::ReadProject",
-            "Project");
+            "MinimalApi::Project");
 
         if (!projectIds.Any())
         {
@@ -118,7 +196,7 @@ public class ProjectService : IProjectService
             new OperationRequirement()
             {
                 Operation = "MinimalApi::Action::CreateProjectUser",
-                Condition = $"Project::{projectId}"
+                Condition = $"MinimalApi::Project:{projectId}"
             });
 
         if (!authResult.Succeeded)
@@ -132,10 +210,10 @@ public class ProjectService : IProjectService
             return ServiceResult.Failure("Invalid role.");
         }
 
-        await _authClaimsService.CreateUserRole(
+        await _userRoleService.CreateUserRole(
             userId,
             role,
-            $"Project::{projectId}");
+            $"MinimalApi::Project:{projectId}");
 
         return ServiceResult.Success();
     }
@@ -144,16 +222,18 @@ public class ProjectService : IProjectService
         ClaimsPrincipal principal,
         string projectId)
     {
-        if (!principal.HasPermission(
-            "MinimalApi::Action::ReadProjectData",
-            $"Project::{projectId}"))
-        {
-            return ServiceResult<IEnumerable<ProjectUser>>.Forbidden();
-        }
+        var authorizationResult = await _authorizationService.AuthorizeAsync(
+            principal,
+            new OperationRequirement(
+                "MinimalApi::Action::ReadProjectData",
+                $"MinimalApi::Project:{projectId}"));
 
-        var userRoles = await _authClaimsService.GetUserRolesByCondition(
+        if (!authorizationResult.Succeeded)
+            return ServiceResult<IEnumerable<ProjectUser>>.Forbidden();
+
+        var userRoles = await _userRoleService.GetUserRolesByRoleCondition(
             "MinimalApi::Role::Project",
-            $"Project::{projectId}",
+            $"MinimalApi::Project:{projectId}",
             "BEGINS_WITH");
 
         if (userRoles == default || !userRoles.Any())
@@ -204,6 +284,11 @@ public class ProjectService : IProjectService
         if (!string.IsNullOrEmpty(project.Metadata))
             item["metadata"] = new AttributeValue(project.Metadata);
 
+        if (project.CreatedBy == default)
+            throw new Exception("Missing CreatedBy.");
+
+        item["created_by"] = new AttributeValue(project.CreatedBy);
+
         if (project.CreatedAt == default)
             throw new Exception("Missing CreatedAt.");
 
@@ -226,6 +311,7 @@ public class ProjectService : IProjectService
             Description = item.ContainsKey("description") ? item["description"].S : default,
             DataPath = item.ContainsKey("data_path") ? item["data_path"].S : default,
             Metadata = item.ContainsKey("metadata") ? item["metadata"].S : default,
+            CreatedBy = item.ContainsKey("created_by") ? item["created_by"].S : default,
             CreatedAt = item.ContainsKey("created_at") ? DateTime.Parse(item["created_at"].S) : default,
             ModifiedAt = item.ContainsKey("modified_at") ? DateTime.Parse(item["modified_at"].S) : default,
         };

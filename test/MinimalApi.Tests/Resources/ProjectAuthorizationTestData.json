@@ -63,49 +63,49 @@
             "id": "user-one-project-one-admin",
             "userId": "42424242-4242-4242-4242-424242424242",
             "roleId": "MinimalApi::Role::ProjectAdmin",
-            "condition": "Project::project-one"
+            "condition": "MinimalApi::Project:project-one"
         },
         {
             "id": "user-one-data-one",
             "userId": "42424242-4242-4242-4242-424242424242",
             "roleId": "MinimalApi::Role::DataOwner",
-            "condition": "DataRecord::user-one-gvcf"
+            "condition": "MinimalApi::DataRecord:user-one-gvcf"
         },
         {
             "id": "user-one-project-two-collaborator",
             "userId": "42424242-4242-4242-4242-424242424242",
             "roleId": "MinimalApi::Role::ProjectCollaborator",
-            "condition": "Project::project-two"
+            "condition": "MinimalApi::Project:project-two"
         },
         {
             "id": "user-two-project-one-collaborator",
             "userId": "23232323-2323-2323-2323-232323232323",
             "roleId": "MinimalApi::Role::ProjectCollaborator",
-            "condition": "Project::project-one"
+            "condition": "MinimalApi::Project:project-one"
         },
         {
             "id": "user-two-project-two-viewer",
             "userId": "23232323-2323-2323-2323-232323232323",
             "roleId": "MinimalApi::Role::ProjectViewer",
-            "condition": "Project::project-two"
+            "condition": "MinimalApi::Project:project-two"
         },
         {
             "id": "user-two-data-two",
             "userId": "23232323-2323-2323-2323-232323232323",
             "roleId": "MinimalApi::Role::DataOwner",
-            "condition": "DataRecord::user-two-gvcf"
+            "condition": "MinimalApi::DataRecord:user-two-gvcf"
         },
         {
             "id": "user-three-project-one-viewer",
             "userId": "86868686-8686-8686-8686-868686868686",
             "roleId": "MinimalApi::Role::ProjectViewer",
-            "condition": "Project::project-one"
+            "condition": "MinimalApi::Project:project-one"
         },
         {
             "id": "user-three-data-three",
             "userId": "86868686-8686-8686-8686-868686868686",
             "roleId": "MinimalApi::Role::DataOwner",
-            "condition": "DataRecord::user-three-pdf"
+            "condition": "MinimalApi::DataRecord:user-three-pdf"
         }
     ]
 }

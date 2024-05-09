@@ -12,6 +12,8 @@ namespace MinimalApi.Tests;
 
 public abstract class IntegrationTestBase
 {
+    protected bool DoUseAvp { get; set; } = false;
+
     protected static DynamoConfig DynamoConfig =>
         new DynamoConfig()
         {
@@ -31,13 +33,26 @@ public abstract class IntegrationTestBase
         string testSeedDataFileName = default,
         Action<IServiceCollection> configureServices = default)
     {
-        var builder = WebApplication.CreateSlimBuilder()
-            .ConfigureApplicationServices();
+        var builder = WebApplication.CreateSlimBuilder();
+
+        builder.ConfigureApplicationConfiguration("/minimal-api");
+
+        builder.ConfigureApplicationServices();
 
         builder.Services.AddAuthorization();
+
         builder.Services.AddSingleton<AuthClaimsTransformation>();
-        builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
-        builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
+
+        if (DoUseAvp)
+        {
+            builder.Services.AddSingleton<IAuthorizationHandler, AvpOperationRequirementHandler>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<IAuthorizationPolicyProvider, AuthorizationPolicyProvider>();
+            builder.Services.AddSingleton<IAuthorizationHandler, OperationRequirementHandler>();
+        }
+
         builder.Services.AddSingleton<ClaimsPrincipalFactory>();
 
         builder.Services.AddSingleton(Options.Create(DynamoConfig));

@@ -8,15 +8,41 @@ public static class ClaimsPrincipalLogic
 {
     public static string GetPrincipalIdentity(this ClaimsPrincipal user)
     {
+        return GetPrincipalIdentity(user, out var _);
+    }
+
+    public static string GetPrincipalIdentity(this ClaimsPrincipal principal, out string claimType)
+    {
         // Cognito `sub` values are globally unique, thus we cannot rely on them
         // to persist after a data recovery event, so we use `username` instead.
 
-        var claim = user.Claims.FirstOrDefault(claim => claim.Type == "username");
+        var claim = principal.Claims.FirstOrDefault(claim => claim.Type == "username");
 
         if (claim == default)
-            claim = user.Claims.FirstOrDefault(claim => claim.Type == "sub");
+        {
+            var sub = principal.GetSub();
 
-        return claim?.Value;
+            if (string.IsNullOrEmpty(sub))
+            {
+                claimType = string.Empty;
+
+                return string.Empty;
+            }
+
+            claimType = "sub";
+            return sub;
+        }
+        else
+        {
+            claimType = claim.Type;
+
+            return claim.Value;
+        }
+    }
+
+    public static string GetSub(this ClaimsPrincipal principal)
+    {
+        return principal.Claims.FirstOrDefault(claim => claim.Type == "sub")?.Value;
     }
 
     public static ClaimsIdentity CloneIdentity(this ClaimsPrincipal principal)
@@ -48,6 +74,6 @@ public static class ClaimsPrincipalLogic
         return user.Claims
             .Where(claim => claim.Type == "permission"
                 && claim.Value.StartsWith($"{permissionId}:{conditionKey}"))
-            .Select(claim => claim.Value.Substring(claim.Value.LastIndexOf("::") + "::".Length));
+            .Select(claim => claim.Value.Substring(claim.Value.LastIndexOf(":") + ":".Length));
     }
 }
