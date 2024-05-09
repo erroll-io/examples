@@ -186,7 +186,8 @@ public static class WebApplicationBuilderExtensions
                 : provider.GetRequiredService<UserRoleService>();
         });
 
-        //builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddDistributedMemoryCache();
+
         return builder;
     }
 }
