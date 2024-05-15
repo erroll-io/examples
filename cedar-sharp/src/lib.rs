@@ -3,7 +3,8 @@ uniffi::include_scaffolding!("cedarsharp");
 use cedar_policy::*;
 
 pub fn authorize(
-    policy: &str,
+    policies: Vec<String>,
+    //policy: &str,
     principal: &str,
     action: &str,
     resource: &str,
@@ -11,7 +12,9 @@ pub fn authorize(
     entities: &str)
         -> Decision {
 
-    let policy_set = policy.parse().unwrap();
+    //let policy_set = policy.parse().unwrap();
+    let parsed_policies: Vec<Policy> = policies.into_iter().map(|p| p.parse().unwrap()).collect();//::<Vec<_>>();
+    let policy_set: PolicySet = PolicySet::from_policies(parsed_policies).unwrap();
     let request = Request::new(
         Some(principal.parse().unwrap()), 
         Some(action.parse().unwrap()),
@@ -59,76 +62,90 @@ mod tests {
 
     #[test]
     fn can_allow() {
-        let policy: &str = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#;
+        let policy: String = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#.to_string();
         let principal = r#"User::"alice""#;
         let action = r#"Action::"view""#;
         let resource = r#"File::"93""#;
 
-        let result = authorize(policy, principal, action, resource, "", "");
+        let result = authorize(vec![policy], principal, action, resource, "", "");
 
         assert_eq!(result, Decision::Allow);
     }
 
     #[test]
     fn can_deny() {
-        let policy: &str = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#;
+        let policy: String = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#.to_string();
         let principal = r#"User::"bob""#;
         let action = r#"Action::"view""#;
         let resource = r#"File::"93""#;
 
-        let result = authorize(policy, principal, action, resource, "", "");
+        let result = authorize(vec![policy], principal, action, resource, "", "");
 
         assert_eq!(result, Decision::Deny);
     }
 
     #[test]
+    fn can_allow_with_multiple() {
+        let policyOne: String = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#.to_string();
+        let policyTwo: String = r#"permit(principal == User::"alice", action == Action::"view", resource == File::"95");"#.to_string();
+        let principal = r#"User::"alice""#;
+        let action = r#"Action::"view""#;
+        let resource = r#"File::"93""#;
+
+        let result = authorize(vec![policyOne, policyTwo], principal, action, resource, "", "");
+
+        assert_eq!(result, Decision::Allow);
+    }
+
+
+    #[test]
     fn can_allow_with_context() {
-        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
+        let policy: String = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#.to_string();
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"update""#;
         let resource: &str = r#"Photo::"peppers.jpg""#;
         let context: &str = r#"{"mfa_authenticated": true, "request_client_ip": "42.42.42.42", "oidc_scope": "profile" }"#;
 
-        let result = authorize(policy, principal, action, resource, context, "");
+        let result = authorize(vec![policy], principal, action, resource, context, "");
 
         assert_eq!(result, Decision::Allow);
     }
 
     #[test]
     fn can_deny_with_context() {
-        let policy: &str = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#;
+        let policy: String = r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#.to_string();
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"update""#;
         let resource: &str = r#"Photo::"peppers.jpg""#;
         let context: &str = r#"{"mfa_authenticated": true, "request_client_ip": "23.23.23.23", "oidc_scope": "profile" }"#;
 
-        let result = authorize(policy, principal, action, resource, context, "");
+        let result = authorize(vec![policy], principal, action, resource, context, "");
 
         assert_eq!(result, Decision::Deny);
     }
 
     #[test]
     fn can_allow_role_with_entities() {
-        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#;
+        let policy: String = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#.to_string();
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"view""#;
         let resource: &str = r#"Photo::"peppers.jpg""#;
         let entities: &str = r#"[ { "uid": { "type": "User", "id": "Bob" }, "attrs": {}, "parents": [ { "type": "Role", "id": "photoJudges" }, { "type": "Role", "id": "juniorPhotoJudges" } ] }, { "uid": { "type": "Role", "id": "photoJudges" }, "attrs": {}, "parents": [] }, { "uid": { "type": "Role", "id": "juniorPhotoJudges" }, "attrs": {}, "parents": [] } ]"#;
 
-        let result = authorize(policy, principal, action, resource, "", entities);
+        let result = authorize(vec![policy], principal, action, resource, "", entities);
 
         assert_eq!(result, Decision::Allow);
     }
 
     #[test]
     fn can_deny_role_with_entities() {
-        let policy: &str = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#;
+        let policy: String = r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#.to_string();
         let principal: &str = r#"User::"Bob""#;
         let action: &str = r#"Action::"view""#;
         let resource: &str = r#"Photo::"peppers.jpg""#;
         let entities: &str = r#"[ { "uid": { "type": "User", "id": "Bob" }, "attrs": {}, "parents": [ { "type": "Role", "id": "photoSubmitters" }, { "type": "Role", "id": "juniorPhotoSubmitters" } ] }, { "uid": { "type": "Role", "id": "photoJudges" }, "attrs": {}, "parents": [] }, { "uid": { "type": "Role", "id": "juniorPhotoJudges" }, "attrs": {}, "parents": [] } ]"#;
 
-        let result = authorize(policy, principal, action, resource, "", entities);
+        let result = authorize(vec![policy], principal, action, resource, "", entities);
 
         assert_eq!(result, Decision::Deny);
     }

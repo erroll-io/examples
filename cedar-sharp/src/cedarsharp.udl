@@ -1,6 +1,6 @@
 namespace cedarsharp {
     Decision authorize(
-        [ByRef] string policy,
+        sequence<string> policies,
         [ByRef] string principal,
         [ByRef] string action,
         [ByRef] string resource,
