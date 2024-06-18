@@ -23,6 +23,34 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amazon.Extensions.Configuration.SystemsManager.Internal
 {
+    public class HybridParameterProcessor : DefaultParameterProcessor
+    {
+        private const string _jsonSentinel = "JSON_ENCODED";
+
+        public override IDictionary<string, string> ProcessParameters(IEnumerable<Parameter> parameters, string path)
+        {
+            Dictionary<string, string> result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var parameter in parameters.Where(parameter => IncludeParameter(parameter, path)))
+            {
+                if (parameter.Value.StartsWith(_jsonSentinel))
+                {
+                    foreach (var subParam in JsonConfigurationParser.Parse(
+                        parameter.Value.Substring(_jsonSentinel.Length)))
+                    {
+                        result[$"{GetKey(parameter, path)}:{subParam.Key}"] = subParam.Value;
+                    }
+                }
+                else
+                {
+                    result[GetKey(parameter, path)] = GetValue(parameter, path);
+                }
+            }
+
+            return result;
+        }
+    }
+
     public class HackSystemsManagerProcessor : ISystemsManagerProcessor
     {
         private const string SecretsManagerPath = "/aws/reference/secretsmanager/";
@@ -36,9 +64,10 @@ namespace Amazon.Extensions.Configuration.SystemsManager.Internal
             
             Source = source;
             Source.ParameterProcessor = Source.ParameterProcessor ??
-                (IsSecretsManagerPath(Source.Path)
-                    ? new JsonParameterProcessor()
-                    : new DefaultParameterProcessor());
+                new HybridParameterProcessor();
+                //(IsSecretsManagerPath(Source.Path)
+                //    ? new JsonParameterProcessor()
+                //    : new DefaultParameterProcessor());
         }
 
         public async Task<IDictionary<string, string>> GetDataAsync()

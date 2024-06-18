@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.Lambda.Serialization.SystemTextJson;
@@ -101,6 +102,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IAuthorizationService, TracingDefaultAuthorizationService>();
         builder.Services.AddScoped<IAuthorizationHandler, OperationRequirementHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, AvpOperationRequirementHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, CedarOperationRequirementHandler>();
         //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
 
         builder.Services.AddCors();
@@ -165,6 +167,10 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddScoped<UserRoleService>();
         builder.Services.AddScoped<AvpUserRoleService>();
+        builder.Services.AddSingleton<Func<Task<AvpValueCache>>>(provider =>
+            () => AvpValueCache.Initialize(
+                provider.GetRequiredService<IAmazonVerifiedPermissions>(),
+                provider.GetRequiredService<IOptions<AvpConfig>>()));
 
         builder.Services.AddTransient<IOptions<AuthConfig>>(provider =>
         {
@@ -172,10 +178,15 @@ public static class WebApplicationBuilderExtensions
             provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
                 .Request.Headers.TryGetValue("X-MINIMAL-API-USE-AVP", out doUseAvpHeader);
 
+            StringValues doUseCedarHeader = string.Empty;
+            provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
+                .Request.Headers.TryGetValue("X-MINIMAL-API-USE-CEDAR", out doUseCedarHeader);
+
             return new Options<AuthConfig>(
                 new AuthConfig()
                 {
-                    DoUseAvp = string.IsNullOrEmpty(doUseAvpHeader) ? false : bool.Parse(doUseAvpHeader)
+                    DoUseAvp = string.IsNullOrEmpty(doUseAvpHeader) ? false : bool.Parse(doUseAvpHeader),
+                    DoUseCedar = string.IsNullOrEmpty(doUseCedarHeader) ? false : bool.Parse(doUseCedarHeader),
                 });
         });
 

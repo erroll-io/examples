@@ -6,4 +6,7 @@ public class AuthConfig
 {
     [Obsolete("For temporary testing purposes only.")]
     public bool DoUseAvp { get; set; } = false;
+
+    [Obsolete("For temporary testing purposes only.")]
+    public bool DoUseCedar { get; set; } = false;
 }

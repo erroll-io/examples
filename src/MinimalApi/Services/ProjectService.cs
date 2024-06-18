@@ -89,8 +89,8 @@ public class ProjectService : IProjectService
             principal,
             new OperationRequirement()
             {
-                Operation = "MinimalApi::Action::ReadProject",
-                Condition = $"MinimalApi::Project:{projectId}"
+                Operation = "MinimalApi::Action::\"ReadProject\"",
+                Condition = $"MinimalApi::Project::\"{projectId}\""
             });
 
         if (!authResult.Succeeded)

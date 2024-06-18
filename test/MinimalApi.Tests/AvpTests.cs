@@ -24,6 +24,9 @@ public class AvpTests
                 builder.Services.AddTransient<AvpUserRoleService>(provider =>
                     new AvpUserRoleService(
                         provider.GetRequiredService<IAmazonVerifiedPermissions>(),
+                        () => AvpValueCache.Initialize(
+                            provider.GetRequiredService<IAmazonVerifiedPermissions>(),
+                            provider.GetRequiredService<IOptions<AvpConfig>>()),
                         provider.GetRequiredService<IOptions<AvpConfig>>()));
 
                 return builder.Build().Services;

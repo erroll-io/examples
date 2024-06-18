@@ -29,7 +29,7 @@ public class AvpOperationRequirementHandler : AuthorizationHandler<OperationRequ
         AuthorizationHandlerContext context,
         OperationRequirement requirement)
     {
-        if (!_authConfig.DoUseAvp)
+        if (!_authConfig.DoUseAvp || _authConfig.DoUseCedar)
             return;
 
         var isAuthorizedResponse = await _avpClient.IsAuthorizedAsync(

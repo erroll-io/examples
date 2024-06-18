@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
+using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
 namespace MinimalApi.Services;
@@ -70,6 +71,20 @@ public static class AvpLogic
         };
     }
 
+    public static string InterpolateStatement(string statement, string principal, string resource)
+    {
+        return statement
+            .Replace("\n", "")
+            .Replace("\r", "")
+            .Replace("\r", "")
+            .Replace("  ", " ")
+            .Replace(" (", "(")
+            .Replace(" )", ")")
+            .Replace("?principal", principal)
+            .Replace("?resource", resource)
+            .Trim('"');
+    }
+
     public static (string, string) SplitCondition(string condition)
     {
         var match = Regex.Match(condition, @"\w+(:)\w+");
@@ -78,40 +93,5 @@ public static class AvpLogic
             throw new Exception("Invalid condition.");
 
         return (condition.Substring(0, match.Groups[1].Index), condition.Substring(match.Groups[1].Index + 1));
-    }
-
-    private static Regex _permitsRegex =
-        new Regex(@"permit\s?\((.*)\)", RegexOptions.Compiled | RegexOptions.Singleline);
-    private static Regex _actionsRegex =
-        new Regex(@"action in \[(.*)\]", RegexOptions.Compiled | RegexOptions.Singleline);
-
-    public static Dictionary<string, List<string>> ParsePolicyTemplateActions(
-        IEnumerable<GetPolicyTemplateResponse> policyTemplates)
-    {
-        var dict = new Dictionary<string, List<string>>();
-
-        foreach (var template in policyTemplates)
-        {
-            var permitsMatch = _permitsRegex.Match(template.Statement);
-
-            if (!permitsMatch.Success)
-                continue;
-            
-            var actionsMatch = _actionsRegex.Match(permitsMatch.Groups[1].Value);
-
-            if (!actionsMatch.Success)
-                continue;
-            
-            foreach (var action in actionsMatch.Groups[1].Value.Split(',')
-                .Select(p => p.Trim().Replace("\"", "")))
-            {
-                if (!dict.ContainsKey(action))
-                    dict[action] = new List<string>();
-
-                dict[action].Add(template.PolicyTemplateId);
-            }
-        }
-
-        return dict;
     }
 }

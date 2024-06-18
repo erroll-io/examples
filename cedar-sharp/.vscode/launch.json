@@ -13,13 +13,15 @@
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=cedarsharp"
+                    "--package=cedarsharp",
+                    "RUST_BACKTRACE=full"
                 ],
                 "filter": {
                     "name": "cedarsharp",
                     "kind": "lib"
                 }
             },
+            "env": { "RUST_BACKTRACE": "1" },
             "args": [],
             "cwd": "${workspaceFolder}"
         }
