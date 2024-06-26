@@ -151,7 +151,7 @@ public class UserService : IUserService
             }
             else
             {
-                _logger.LogInformation($"Using cached userId for {sub}.");
+                //_logger.LogInformation($"Using cached userId for {sub}.");
             }
         }
         else

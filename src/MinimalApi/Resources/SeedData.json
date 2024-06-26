@@ -19,6 +19,14 @@
     ],
     "roles": [
         {
+            "id": "MinimalApi::Role::Admin",
+            "name": "Admin.",
+            "description": "Erroll hisself.",
+            "rolePermissions": [
+                { "permissionId": "MinimalApi::Action::ExecuteTests" }
+            ]
+        },
+        {
             "id": "MinimalApi::Role::AppUser",
             "name": "App User.",
             "description": "Any demo.erroll.io user.",

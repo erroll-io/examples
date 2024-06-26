@@ -12,16 +12,13 @@ namespace MinimalApi;
 public class AvpOperationRequirementHandler : AuthorizationHandler<OperationRequirement>
 {
     private readonly IAmazonVerifiedPermissions _avpClient;
-    private readonly AuthConfig _authConfig;
     private readonly AvpConfig _avpConfig;
 
     public AvpOperationRequirementHandler(
         IAmazonVerifiedPermissions avpClient,
-        IOptions<AuthConfig> authConfigOptionsSnapshot,
         IOptions<AvpConfig> avpConfigOptions)
     {
         _avpClient = avpClient;
-        _authConfig = authConfigOptionsSnapshot.Value;
         _avpConfig = avpConfigOptions.Value;
     }
 
@@ -29,7 +26,7 @@ public class AvpOperationRequirementHandler : AuthorizationHandler<OperationRequ
         AuthorizationHandlerContext context,
         OperationRequirement requirement)
     {
-        if (!_authConfig.DoUseAvp || _authConfig.DoUseCedar)
+        if (requirement.Strategy != "AVP")
             return;
 
         var isAuthorizedResponse = await _avpClient.IsAuthorizedAsync(

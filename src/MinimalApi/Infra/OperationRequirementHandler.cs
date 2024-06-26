@@ -10,18 +10,15 @@ namespace MinimalApi;
 
 public class OperationRequirementHandler : AuthorizationHandler<OperationRequirement>
 {
-    private readonly AuthConfig _authConfig;
-
-    public OperationRequirementHandler(IOptionsSnapshot<AuthConfig> authConfigOptionsSnapshot)
+    public OperationRequirementHandler()
     {
-        _authConfig = authConfigOptionsSnapshot.Value;
     }
 
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         OperationRequirement requirement)
     {
-        if (_authConfig.DoUseAvp)
+        if (!string.IsNullOrEmpty(requirement.Strategy) && requirement.Strategy != "CLAIMS")
             return Task.CompletedTask;
 
         if (context.User.HasPermission(requirement.Operation, requirement.Condition))
@@ -30,7 +27,7 @@ public class OperationRequirementHandler : AuthorizationHandler<OperationRequire
         }
         else
         {
-            Console.WriteLine("Failing user: " + (string.Join(", ", context.User.Claims.Select(p => $"{p.Type}:{p.Value}"))));
+            context.Fail();
         }
 
         return Task.CompletedTask;

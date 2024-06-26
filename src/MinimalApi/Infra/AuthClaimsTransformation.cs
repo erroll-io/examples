@@ -20,7 +20,6 @@ public class AuthClaimsTransformation : IClaimsTransformation
     private readonly IUserService _userService;
     private readonly IUserRoleService _userRoleService;
     private readonly IRoleService _roleService;
-    private readonly AuthConfig _authConfig;
 
     private bool _isHandled = false;
 
@@ -29,22 +28,17 @@ public class AuthClaimsTransformation : IClaimsTransformation
         IUserService userService,
         IUserRoleService userRoleService,
         IRoleService roleService,
-        IOptions<AuthConfig> authConfigOptions,
         IDistributedCache cache = default)
     {
         _logger = logger;
         _userService = userService;
         _userRoleService = userRoleService;
         _roleService = roleService;
-        _authConfig = authConfigOptions.Value;
         _cache = cache;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        var sw = new Stopwatch();
-
-        sw.Start();
         if (principal.Identity != default && principal.Identity.IsAuthenticated && !_isHandled)
         {
             var principalClaims = (await GetUserClaims(principal)).ToList();
@@ -60,9 +54,6 @@ public class AuthClaimsTransformation : IClaimsTransformation
 
             _isHandled = true;
         }
-        sw.Stop();
-
-        _logger.LogTrace($"MinimalApi::Metric::{(_authConfig.DoUseAvp ? "AVP" : "")}ClaimsTxEvalTimeMs: {sw.ElapsedMilliseconds}");
 
         return principal;
     }
@@ -75,7 +66,7 @@ public class AuthClaimsTransformation : IClaimsTransformation
 
         if (claims != default && claims.Any())
         {
-            _logger.LogInformation($"Using cached claims for {userId}.");
+            //_logger.LogInformation($"Using cached claims for {userId}.");
             return claims;
         }
 
@@ -84,7 +75,8 @@ public class AuthClaimsTransformation : IClaimsTransformation
             new ClaimLite("username", userId)
         };
 
-        if (!_authConfig.DoUseAvp)
+        // TODO: get rid of this hack after authz comparison testing
+        if (_userRoleService is UserRoleService)
         {
             var userRoles = await _userRoleService.GetUserRolesByUserId(userId);
 
@@ -93,7 +85,11 @@ public class AuthClaimsTransformation : IClaimsTransformation
                 var rolePermissions = await _roleService.GetRolePermissions(userRole.RoleId);
 
                 return rolePermissions.Select(permission =>
-                    new ClaimLite("permission", $"{permission.PermissionId}:{userRole.Condition}"));
+                    new ClaimLite(
+                        "permission",
+                        string.IsNullOrEmpty(userRole.Condition)
+                            ? permission.PermissionId
+                            : $"{permission.PermissionId}:{userRole.Condition}"));
             });
 
             var results = await Task.WhenAll(tasks);

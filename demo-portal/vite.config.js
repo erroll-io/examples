@@ -28,7 +28,7 @@ export default defineConfig(async ({ command, mode }) => {
     },
     server: {
       host: 'local.erroll.io', 
-      port: 8080,
+      port: 8081,
     }
   }
 })

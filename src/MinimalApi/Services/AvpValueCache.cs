@@ -78,7 +78,9 @@ public class AvpValueCache
                     {
                         PolicyId = policyItem.PolicyId,
                         PolicyTemplateId = policyItem.Definition.TemplateLinked.PolicyTemplateId,
-                        Condition = $"{policyItem.Resource.EntityType}::\"{policyItem.Resource.EntityId}\"",
+                        Condition = policyItem.Resource == default
+                            ? string.Empty
+                            : $"{policyItem.Resource.EntityType}::\"{policyItem.Resource.EntityId}\"",
                         CreatedAt = policyItem.CreatedDate,
                         ModifiedAt = policyItem.LastUpdatedDate,
                     });

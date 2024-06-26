@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
@@ -43,7 +40,9 @@ public static class AvpLogic
         return new ActionIdentifier
         {
             ActionType = "MinimalApi::Action",
-            ActionId = requirement.Operation.Substring(requirement.Operation.LastIndexOf("::") + 2)
+            ActionId = requirement.Operation
+                .Substring(requirement.Operation.LastIndexOf("::") + 2)
+                .Trim('"')
         };
     }
 
@@ -87,11 +86,8 @@ public static class AvpLogic
 
     public static (string, string) SplitCondition(string condition)
     {
-        var match = Regex.Match(condition, @"\w+(:)\w+");
+        var index = condition.LastIndexOf("::");
 
-        if (!match.Success)
-            throw new Exception("Invalid condition.");
-
-        return (condition.Substring(0, match.Groups[1].Index), condition.Substring(match.Groups[1].Index + 1));
+        return (condition.Substring(0, index).Trim('"'), condition.Substring(index + 2).Trim('"'));
     }
 }

@@ -217,4 +217,19 @@ mod tests {
         assert_eq!(result.result, Decision::Allow);
     }
 
+    #[test]
+    fn can_allow_without_resource() {
+        let policy: AvpPolicy = AvpPolicy {
+            id: String::from("42"),
+            policy: String::from(r#"permit (principal in MinimalApi::User::"39cc99d8-3cb7-4f7b-8ea3-af825fa20751", action in [MinimalApi::Action::"ExecuteTests"], resource);"#)
+        };
+        let principal = "MinimalApi::User::\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\"";
+        let action = r#"MinimalApi::Action::"ExecuteTests""#;
+        let resource = r#"MinimalApi::Foobert::"*""#;
+
+        let result = authorize(vec![policy], principal, action, resource, "", "");
+
+        assert_eq!(result.result, Decision::Allow);
+    }
+
 }

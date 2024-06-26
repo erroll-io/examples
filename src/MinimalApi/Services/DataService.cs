@@ -99,7 +99,7 @@ public class DataService : IDataService
             principal,
             new OperationRequirement(
                 "MinimalApi::Action::CreateProjectData",
-                $"MinimalApi::Project:{projectId}"));
+                $"MinimalApi::Project::{projectId}"));
 
         if (!authorizationResult.Succeeded)
             return ServiceResult<DataRecord>.Forbidden(AuthorizationResult.Failed());
@@ -213,7 +213,7 @@ public class DataService : IDataService
             principal,
             new OperationRequirement(
                 "MinimalApi::Action::ReadProjectData",
-                $"MinimalApi::Project:{projectId}"));
+                $"MinimalApi::Project::{projectId}"));
 
         if (!authorizationResult.Succeeded)
             return ServiceResult<IEnumerable<DataRecord>>.Forbidden(AuthorizationResult.Failed());

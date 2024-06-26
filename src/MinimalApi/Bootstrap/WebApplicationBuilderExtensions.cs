@@ -99,11 +99,12 @@ public static class WebApplicationBuilderExtensions
                 });
         builder.Services.AddAuthorization();
 
-        builder.Services.AddScoped<IAuthorizationService, TracingDefaultAuthorizationService>();
         builder.Services.AddScoped<IAuthorizationHandler, OperationRequirementHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, AvpOperationRequirementHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, CedarOperationRequirementHandler>();
-        //builder.Services.AddTransient<IAuthorizer, CedarAuthorizer>();
+
+        builder.Services.AddTransient<ClaimsPrincipalFactory>();
+        builder.Services.AddScoped(provider => new CedarComparisonService(provider));
 
         builder.Services.AddCors();
         builder.Services.AddOptions<CorsOptions>()
@@ -172,30 +173,9 @@ public static class WebApplicationBuilderExtensions
                 provider.GetRequiredService<IAmazonVerifiedPermissions>(),
                 provider.GetRequiredService<IOptions<AvpConfig>>()));
 
-        builder.Services.AddTransient<IOptions<AuthConfig>>(provider =>
-        {
-            StringValues doUseAvpHeader = string.Empty;
-            provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
-                .Request.Headers.TryGetValue("X-MINIMAL-API-USE-AVP", out doUseAvpHeader);
-
-            StringValues doUseCedarHeader = string.Empty;
-            provider.GetRequiredService<IHttpContextAccessor>()?.HttpContext?
-                .Request.Headers.TryGetValue("X-MINIMAL-API-USE-CEDAR", out doUseCedarHeader);
-
-            return new Options<AuthConfig>(
-                new AuthConfig()
-                {
-                    DoUseAvp = string.IsNullOrEmpty(doUseAvpHeader) ? false : bool.Parse(doUseAvpHeader),
-                    DoUseCedar = string.IsNullOrEmpty(doUseCedarHeader) ? false : bool.Parse(doUseCedarHeader),
-                });
-        });
-
-        builder.Services.AddScoped<IUserRoleService>(provider =>
-        {
-            return provider.GetRequiredService<IOptions<AuthConfig>>().Value.DoUseAvp
-                ? provider.GetRequiredService<AvpUserRoleService>()
-                : provider.GetRequiredService<UserRoleService>();
-        });
+        builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+        // TODO: temp hack for multi-strategy authz testing
+        builder.Services.AddScoped<AvpUserRoleService>();
 
         builder.Services.AddDistributedMemoryCache();
 
@@ -203,7 +183,7 @@ public static class WebApplicationBuilderExtensions
     }
 }
 
-public class Options<T> : IOptions<T>
+public class Options<T> : IOptions<T>, IOptionsSnapshot<T>
     where T : class
 {
     private readonly T _value;
@@ -214,4 +194,6 @@ public class Options<T> : IOptions<T>
     }
 
     public T Value => _value;
+
+    public T Get(string? name) => _value;
 }

@@ -189,6 +189,7 @@ public class TestSeeder
                     Name = seedProject.Name,
                     DataPath = seedProject.DataPath,
                     Description = seedProject.Description,
+                    CreatedBy = "SEEDER",
                     CreatedAt = DateTime.UtcNow
                 };
 
