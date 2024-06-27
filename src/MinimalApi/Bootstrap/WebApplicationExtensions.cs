@@ -36,7 +36,7 @@ public static class WebApplicationExtensions
         app.MapPost("/projects/{projectId}/data", DataEndpoints.CreateProjectData);
         app.MapGet("/projects/{projectId}/data", DataEndpoints.GetProjectData);
 
-        app.MapPost("/authorize", AuthorizationEndpoints.Authorize);
+        app.MapGet("tests/authz-comparison", TestEndpoints.CompareAuthorizationStrategies);
 
         return app;
     }

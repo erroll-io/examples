@@ -61,9 +61,12 @@ public static class ClaimsPrincipalLogic
         string permissionId,
         string condition)
     {
+        // TODO: because I'm too lazy to update the seed data to include the Cedar-required quotes.
+        permissionId = permissionId.Replace("\"", "");
+
         return user.Claims
             .Any(claim => claim.Type == "permission"
-                && claim.Value == $"{permissionId}:{condition}");
+                && claim.Value == (string.IsNullOrEmpty(condition) ? permissionId : $"{permissionId}:{condition}"));
     }
 
     public static IEnumerable<string> GetResourceIdsForPermissionCondition(

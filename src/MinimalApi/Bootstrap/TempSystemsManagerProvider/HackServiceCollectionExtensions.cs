@@ -13,8 +13,11 @@ public static class ConfigurationBuilderExtensions
     {
         Console.WriteLine("Registering hacked SSM configuration source.");
 
-        var source = new HackSystemsManagerConfigurationSource();
-        source.Path = path;
+        var source = new HackSystemsManagerConfigurationSource()
+        {
+            Path = path,
+            ParameterProcessor = new HybridParameterProcessor()
+        };
 
         if (string.IsNullOrWhiteSpace(source.Path)) throw new ArgumentNullException(nameof(source.Path));
         if (source.AwsOptions != null) return builder.Add(source);

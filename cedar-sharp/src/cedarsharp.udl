@@ -1,11 +1,21 @@
 namespace cedarsharp {
-    Decision authorize(
-        [ByRef] string policy,
+    CedarResult authorize(
+        sequence<AvpPolicy> policies,
         [ByRef] string principal,
         [ByRef] string action,
         [ByRef] string resource,
         [ByRef] string context_json,
         [ByRef] string entities_json);
+};
+
+dictionary AvpPolicy {
+   string id;
+   string policy;
+};
+
+dictionary CedarResult {
+    Decision result;
+    string error;
 };
 
 enum Decision {

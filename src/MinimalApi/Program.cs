@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +10,6 @@ var app = WebApplication.CreateSlimBuilder(args)
     .Build()
     .ConfigureApplication()
     .RegisterEndpoints();
-
 
 #if DEBUG
 var seeder = app.Services.GetRequiredService<DynamoSeeder>();

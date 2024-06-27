@@ -1,9 +1,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Authentication;
-
-namespace MinimalApi.Tests;
+namespace MinimalApi.Services;
 
 public class ClaimsPrincipalFactory
 {

@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 
+using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
 namespace MinimalApi.Services;
@@ -42,7 +40,9 @@ public static class AvpLogic
         return new ActionIdentifier
         {
             ActionType = "MinimalApi::Action",
-            ActionId = requirement.Operation.Substring(requirement.Operation.LastIndexOf("::") + 2)
+            ActionId = requirement.Operation
+                .Substring(requirement.Operation.LastIndexOf("::") + 2)
+                .Trim('"')
         };
     }
 
@@ -70,48 +70,24 @@ public static class AvpLogic
         };
     }
 
-    public static (string, string) SplitCondition(string condition)
+    public static string InterpolateStatement(string statement, string principal, string resource)
     {
-        var match = Regex.Match(condition, @"\w+(:)\w+");
-
-        if (!match.Success)
-            throw new Exception("Invalid condition.");
-
-        return (condition.Substring(0, match.Groups[1].Index), condition.Substring(match.Groups[1].Index + 1));
+        return statement
+            .Replace("\n", "")
+            .Replace("\r", "")
+            .Replace("\r", "")
+            .Replace("  ", " ")
+            .Replace(" (", "(")
+            .Replace(" )", ")")
+            .Replace("?principal", principal)
+            .Replace("?resource", resource)
+            .Trim('"');
     }
 
-    private static Regex _permitsRegex =
-        new Regex(@"permit\s?\((.*)\)", RegexOptions.Compiled | RegexOptions.Singleline);
-    private static Regex _actionsRegex =
-        new Regex(@"action in \[(.*)\]", RegexOptions.Compiled | RegexOptions.Singleline);
-
-    public static Dictionary<string, List<string>> ParsePolicyTemplateActions(
-        IEnumerable<GetPolicyTemplateResponse> policyTemplates)
+    public static (string, string) SplitCondition(string condition)
     {
-        var dict = new Dictionary<string, List<string>>();
+        var index = condition.LastIndexOf("::");
 
-        foreach (var template in policyTemplates)
-        {
-            var permitsMatch = _permitsRegex.Match(template.Statement);
-
-            if (!permitsMatch.Success)
-                continue;
-            
-            var actionsMatch = _actionsRegex.Match(permitsMatch.Groups[1].Value);
-
-            if (!actionsMatch.Success)
-                continue;
-            
-            foreach (var action in actionsMatch.Groups[1].Value.Split(',')
-                .Select(p => p.Trim().Replace("\"", "")))
-            {
-                if (!dict.ContainsKey(action))
-                    dict[action] = new List<string>();
-
-                dict[action].Add(template.PolicyTemplateId);
-            }
-        }
-
-        return dict;
+        return (condition.Substring(0, index).Trim('"'), condition.Substring(index + 2).Trim('"'));
     }
 }

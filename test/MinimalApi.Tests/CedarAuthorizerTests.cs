@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace MinimalApi.Tests;
 
 public class CedarAuthorizerTests
@@ -26,6 +28,32 @@ public class CedarAuthorizerTests
         var result = new CedarAuthorizer().Authorize(policy, principal, action, resource, "", "");
 
         Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public void CanAllowWithMultiple()
+    {
+        var policyOne = "permit(principal in User::\"alice\", action in [Action::\"update\", Action::\"delete\"], resource == Photo::\"peppers.jpg\") when { context.mfa_authenticated == true && context.request_client_ip == \"42.42.42.42\" };";
+        var policyTwo = "permit(principal == User::\"alice\", action == Action::\"view\", resource == File::\"93\");";
+        var policyThree = "permit(principal == User::\"alice\", action == Action::\"view\", resource == File::\"95\");";
+        var principal = "User::\"alice\"";
+        var action = "Action::\"view\"";
+        var resource = "File::\"93\"";
+
+        var result = new CedarAuthorizer().Authorize(
+            new List<AvpPolicy>()
+            {
+                new AvpPolicy("23", policyOne),
+                new AvpPolicy("42", policyTwo),
+                new AvpPolicy("86", policyThree),
+            },
+            principal,
+            action,
+            resource,
+            "",
+            "");
+
+        Assert.True(result.Succeeded);
     }
 
     [Fact]

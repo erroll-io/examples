@@ -24,6 +24,9 @@ public class AvpTests
                 builder.Services.AddTransient<AvpUserRoleService>(provider =>
                     new AvpUserRoleService(
                         provider.GetRequiredService<IAmazonVerifiedPermissions>(),
+                        () => AvpValueCache.Initialize(
+                            provider.GetRequiredService<IAmazonVerifiedPermissions>(),
+                            provider.GetRequiredService<IOptions<AvpConfig>>()),
                         provider.GetRequiredService<IOptions<AvpConfig>>()));
 
                 return builder.Build().Services;
@@ -40,7 +43,7 @@ public class AvpTests
     {
         var principalId = "42424242-4242-4242-4242-424242424242";
         var roleId = "MinimalApi::Role::ProjectAdmin";
-        var condition = "MinimalApi::Project:42424242-4242-4242-4242-424242424242";
+        var condition = "MinimalApi::Project::42424242-4242-4242-4242-424242424242";
 
         var service = _serviceProvider.GetRequiredService<IUserRoleService>();
 

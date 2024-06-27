@@ -77,7 +77,7 @@ public class ProjectService : IProjectService
             await _userRoleService.CreateUserRole(
                 userId,
                 "MinimalApi::Role::ProjectOwner",
-                $"MinimalApi::Project:{projectId}");
+                $"MinimalApi::Project::{projectId}");
 
             return ServiceResult<Project>.Success(project);
         }
@@ -89,8 +89,8 @@ public class ProjectService : IProjectService
             principal,
             new OperationRequirement()
             {
-                Operation = "MinimalApi::Action::ReadProject",
-                Condition = $"MinimalApi::Project:{projectId}"
+                Operation = "MinimalApi::Action::\"ReadProject\"",
+                Condition = $"MinimalApi::Project::\"{projectId}\""
             });
 
         if (!authResult.Succeeded)
@@ -196,7 +196,7 @@ public class ProjectService : IProjectService
             new OperationRequirement()
             {
                 Operation = "MinimalApi::Action::CreateProjectUser",
-                Condition = $"MinimalApi::Project:{projectId}"
+                Condition = $"MinimalApi::Project::{projectId}"
             });
 
         if (!authResult.Succeeded)
@@ -213,7 +213,7 @@ public class ProjectService : IProjectService
         await _userRoleService.CreateUserRole(
             userId,
             role,
-            $"MinimalApi::Project:{projectId}");
+            $"MinimalApi::Project::{projectId}");
 
         return ServiceResult.Success();
     }
@@ -226,14 +226,14 @@ public class ProjectService : IProjectService
             principal,
             new OperationRequirement(
                 "MinimalApi::Action::ReadProjectData",
-                $"MinimalApi::Project:{projectId}"));
+                $"MinimalApi::Project::{projectId}"));
 
         if (!authorizationResult.Succeeded)
             return ServiceResult<IEnumerable<ProjectUser>>.Forbidden();
 
         var userRoles = await _userRoleService.GetUserRolesByRoleCondition(
             "MinimalApi::Role::Project",
-            $"MinimalApi::Project:{projectId}",
+            $"MinimalApi::Project::{projectId}",
             "BEGINS_WITH");
 
         if (userRoles == default || !userRoles.Any())

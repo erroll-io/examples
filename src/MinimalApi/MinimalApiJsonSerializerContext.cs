@@ -36,6 +36,11 @@ namespace MinimalApi;
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(ClaimLite))]
 [JsonSerializable(typeof(List<ClaimLite>))]
+[JsonSerializable(typeof(CedarSharp.AvpPolicy))]
+[JsonSerializable(typeof(List<CedarSharp.AvpPolicy>))]
+
+[JsonSerializable(typeof(AuthorizationComparisonResponse))]
+[JsonSerializable(typeof(AuthorizationComparisonResult))]
 
 #if DEBUG
 [JsonSerializable(typeof(SeedData))]
