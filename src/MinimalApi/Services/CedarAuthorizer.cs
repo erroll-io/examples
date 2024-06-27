@@ -6,16 +6,16 @@ using MinimalApi.CedarSharp;
 
 namespace MinimalApi;
 
-public class AvpPolicy
+public class CedarPolicy
 {
     public string Id { get; set; }
     public string Policy { get; set; }
 
-    public AvpPolicy()
+    public CedarPolicy()
     {
     }
 
-    public AvpPolicy(string id, string policy)
+    public CedarPolicy(string id, string policy)
     {
         Id = id;
         Policy = policy;
@@ -33,7 +33,7 @@ public class CedarAuthorizer
         string entities = "")
     {
         return Authorize(
-            new List<AvpPolicy>() { new AvpPolicy() { Id = string.Empty, Policy = policy } },
+            new List<CedarPolicy>() { new CedarPolicy() { Id = string.Empty, Policy = policy } },
             principal,
             action,
             resource,
@@ -42,7 +42,7 @@ public class CedarAuthorizer
     }
 
     public AuthorizationResult Authorize(
-        IEnumerable<AvpPolicy> policies,
+        IEnumerable<CedarPolicy> policies,
         string principal,
         string action,
         string resource,
@@ -51,7 +51,7 @@ public class CedarAuthorizer
     {
         var result = CedarsharpMethods.Authorize(
             policies
-                .Select(policy => new CedarSharp.AvpPolicy(policy.Id, policy.Policy))
+                .Select(policy => new CedarSharp.CedarPolicy(policy.Id, policy.Policy))
                 .ToList(),
             principal,
             action,

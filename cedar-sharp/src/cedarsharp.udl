@@ -1,6 +1,6 @@
 namespace cedarsharp {
     CedarResult authorize(
-        sequence<AvpPolicy> policies,
+        sequence<CedarPolicy> policies,
         [ByRef] string principal,
         [ByRef] string action,
         [ByRef] string resource,
@@ -8,7 +8,7 @@ namespace cedarsharp {
         [ByRef] string entities_json);
 };
 
-dictionary AvpPolicy {
+dictionary CedarPolicy {
    string id;
    string policy;
 };

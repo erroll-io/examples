@@ -41,11 +41,11 @@ public class CedarAuthorizerTests
         var resource = "File::\"93\"";
 
         var result = new CedarAuthorizer().Authorize(
-            new List<AvpPolicy>()
+            new List<CedarPolicy>()
             {
-                new AvpPolicy("23", policyOne),
-                new AvpPolicy("42", policyTwo),
-                new AvpPolicy("86", policyThree),
+                new CedarPolicy("23", policyOne),
+                new CedarPolicy("42", policyTwo),
+                new CedarPolicy("86", policyThree),
             },
             principal,
             action,

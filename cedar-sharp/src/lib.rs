@@ -1,10 +1,12 @@
 uniffi::include_scaffolding!("cedarsharp");
 
-use std::str::FromStr;
+extern crate stopwatch;
 
+use std::str::FromStr;
+use stopwatch::{Stopwatch};
 use cedar_policy::*;
 
-pub struct AvpPolicy {
+pub struct CedarPolicy {
     id: String,
     policy: String,
 }
@@ -15,7 +17,7 @@ pub struct CedarResult {
 }
 
 pub fn authorize(
-    policies: Vec<AvpPolicy>,
+    policies: Vec<CedarPolicy>,
     principal: &str,
     action: &str,
     resource: &str,
@@ -28,9 +30,9 @@ pub fn authorize(
         parse_result.unwrap()
     }).collect();
 
-    let p = str::replace(principal, "\\\"", "\"").parse();
-    let a = str::replace(action, "\\\"", "\"").parse();
-    let r = str::replace(resource, "\\\"", "\"").parse();
+    let p = principal.parse();
+    let a = action.parse();
+    let r = resource.parse();
 
     if (p.is_err() || a.is_err() || r.is_err()) {
         return CedarResult {
@@ -90,7 +92,7 @@ mod tests {
 
     #[test]
     fn can_allow() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#)
         };
@@ -105,7 +107,7 @@ mod tests {
 
     #[test]
     fn can_deny() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#)
         };
@@ -120,11 +122,11 @@ mod tests {
 
     #[test]
     fn can_allow_with_multiple() {
-        let policy_one: AvpPolicy = AvpPolicy {
+        let policy_one: CedarPolicy = CedarPolicy {
             id: String::from("23"),
             policy: String::from(r#"permit(principal == User::"alice", action == Action::"view", resource == File::"93");"#),
         };
-        let policy_two: AvpPolicy = AvpPolicy {
+        let policy_two: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit(principal == User::"alice", action == Action::"view", resource == File::"95");"#)
         };
@@ -139,7 +141,7 @@ mod tests {
 
     #[test]
     fn can_allow_with_context() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#)
         };
@@ -155,7 +157,7 @@ mod tests {
 
     #[test]
     fn can_deny_with_context() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit( principal in User::"Bob", action in [Action::"update", Action::"delete"], resource == Photo::"peppers.jpg") when { context.mfa_authenticated == true && context.request_client_ip == "42.42.42.42" };"#)
         };
@@ -171,7 +173,7 @@ mod tests {
 
     #[test]
     fn can_allow_role_with_entities() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#)
         };
@@ -187,7 +189,7 @@ mod tests {
 
     #[test]
     fn can_deny_role_with_entities() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit(principal in Role::"photoJudges", action == Action::"view", resource == Photo::"peppers.jpg");"#)
         };
@@ -203,13 +205,13 @@ mod tests {
 
     #[test]
     fn can_allow_avp() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
-            policy: String::from(r#"permit( principal in MinimalApi::User::\\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\", action in [  MinimalApi::Action::\"ReadProject\",  MinimalApi::Action::\"UpdateProject\",  MinimalApi::Action::\"DeleteProject\",  MinimalApi::Action::\"CreateProjectUser\",  MinimalApi::Action::\"ReadProjectUser\",  MinimalApi::Action::\"UpdateProjectUser\",  MinimalApi::Action::\"DeleteProjectUser\",  MinimalApi::Action::\"CreateProjectData\",  MinimalApi::Action::\"ReadProjectData\",  MinimalApi::Action::\"UpdateProjectData\",  MinimalApi::Action::\"DeleteProjectData\",  MinimalApi::Action::\"CreateProjectResults\",  MinimalApi::Action::\"ReadProjectResults\",  MinimalApi::Action::\"UpdateProjectResults\",  MinimalApi::Action::\"DeleteProjectResults\" ], resource in MinimalApi::Project::\"9fec4852-59e5-4916-a6a8-233ac94f460c\");"#)
+            policy: String::from("permit( principal in MinimalApi::User::\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\", action in [  MinimalApi::Action::\"ReadProject\",  MinimalApi::Action::\"UpdateProject\",  MinimalApi::Action::\"DeleteProject\",  MinimalApi::Action::\"CreateProjectUser\",  MinimalApi::Action::\"ReadProjectUser\",  MinimalApi::Action::\"UpdateProjectUser\",  MinimalApi::Action::\"DeleteProjectUser\",  MinimalApi::Action::\"CreateProjectData\",  MinimalApi::Action::\"ReadProjectData\",  MinimalApi::Action::\"UpdateProjectData\",  MinimalApi::Action::\"DeleteProjectData\",  MinimalApi::Action::\"CreateProjectResults\",  MinimalApi::Action::\"ReadProjectResults\",  MinimalApi::Action::\"UpdateProjectResults\",  MinimalApi::Action::\"DeleteProjectResults\" ], resource in MinimalApi::Project::\"9fec4852-59e5-4916-a6a8-233ac94f460c\");")
         };
-        let principal = "MinimalApi::User::\\\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\\\"";
-        let action = r#"MinimalApi::Action::\\\"ReadProject\\\""#;
-        let resource = r#"MinimalApi::Project::\"9fec4852-59e5-4916-a6a8-233ac94f460c\""#;
+        let principal = "MinimalApi::User::\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\"";
+        let action = "MinimalApi::Action::\"ReadProject\"";
+        let resource = "MinimalApi::Project::\"9fec4852-59e5-4916-a6a8-233ac94f460c\"";
 
         let result = authorize(vec![policy], principal, action, resource, "", "");
 
@@ -218,17 +220,57 @@ mod tests {
 
     #[test]
     fn can_allow_without_resource() {
-        let policy: AvpPolicy = AvpPolicy {
+        let policy: CedarPolicy = CedarPolicy {
             id: String::from("42"),
             policy: String::from(r#"permit (principal in MinimalApi::User::"39cc99d8-3cb7-4f7b-8ea3-af825fa20751", action in [MinimalApi::Action::"ExecuteTests"], resource);"#)
         };
         let principal = "MinimalApi::User::\"39cc99d8-3cb7-4f7b-8ea3-af825fa20751\"";
-        let action = r#"MinimalApi::Action::"ExecuteTests""#;
-        let resource = r#"MinimalApi::Foobert::"*""#;
+        let action = "MinimalApi::Action::\"ExecuteTests\"";
+        let resource = "MinimalApi::PlaceHolder::\"0\"";
 
         let result = authorize(vec![policy], principal, action, resource, "", "");
 
         assert_eq!(result.result, Decision::Allow);
+    }
+
+    #[test]
+    fn time_authz_calls() {
+        let mut strategies: [&str; 3] = 
+        [
+            "CLAIMS",
+            "AVP",
+            "CEDAR"
+        ];
+
+        let mut principals: [&str; 3] =
+        [
+            "MinimalApi::User::\"user-one\"",
+            "MinimalApi::User::\"user-two\"",
+            "MinimalApi::User::\"user-three\""
+        ];
+
+        let mut actions: [&str; 8] =
+        [
+            "MinimalApi::Action::\"ReadProject\"",
+            "MinimalApi::Action::\"CreateProject\"",
+            "MinimalApi::Action::\"CreateProjectData\"",
+            "MinimalApi::Action::\"CreateProjectResults\"",
+            "MinimalApi::Action::\"DeleteProject\"",
+            "MinimalApi::Action::\"DeleteProjectData\"",
+            "MinimalApi::Action::\"DeleteProjectResults\"",
+            "MinimalApi::Action::\"ReadProject\""
+        ];
+
+        let mut resources: [&str; 3] =
+        [
+            "MinimalApi::Project::\"project-one\"",
+            "MinimalApi::Project::\"project-two\"",
+            "MinimalApi::Project::\"project-three\""
+        ];
+
+        for i in 0..1000 {
+            let sw = Stopwatch::start_new();
+        }
     }
 
 }
