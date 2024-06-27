@@ -1,6 +1,6 @@
 namespace cedarsharp {
     CedarResult authorize(
-        sequence<CedarPolicy> policies,
+        [ByRef] sequence<CedarPolicy> policies,
         [ByRef] string principal,
         [ByRef] string action,
         [ByRef] string resource,
