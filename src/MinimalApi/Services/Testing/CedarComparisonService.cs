@@ -136,7 +136,7 @@ public class AuthorizationComparisonResult
     public double ElapsedUsStdDev { get; set; }
 }
 
-public static class Extensions
+internal static class Extensions
 {
     public static double StdDev(this IEnumerable<double> values)
     {

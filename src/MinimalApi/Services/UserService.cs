@@ -147,11 +147,8 @@ public class UserService : IUserService
                 var userResult = await GetCurrentUser(principal);
                 userId = userResult.Result.Id;
 
+                // TODO: expiry
                 await _cache.Set(sub, userId);
-            }
-            else
-            {
-                //_logger.LogInformation($"Using cached userId for {sub}.");
             }
         }
         else
