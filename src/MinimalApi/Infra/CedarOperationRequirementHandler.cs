@@ -36,21 +36,8 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
             return;
         
         var principalId = context.User.GetPrincipalIdentity();
-        var cacheKey = $"CEDAR_POLICIES::{principalId}";
 
-        var policies = await _cache.Get<List<CedarSharp.AvpPolicy>>(cacheKey);
-
-        if (policies == default)
-        {
-            var userRoles = await _userRoleService.GetUserRolesByUserId(principalId);
-            
-            policies = userRoles
-                .Select(userRole => new CedarSharp.AvpPolicy(userRole.Id, userRole.Metadata))
-                .ToList();
-
-            // TODO: expiry
-            await _cache.Set(cacheKey, policies);
-        }
+        var policies = await GetPolicies(principalId);
 
         var result = Authorize(
             policies,
@@ -71,5 +58,29 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
 
             context.Fail();
         }
+    }
+
+    private async Task<List<CedarSharp.AvpPolicy>> GetPolicies(string principalId)
+    {
+        // TODO: this needs further consideration. For now just get all of the
+        // AVP Policies associated with the principal.
+
+        var cacheKey = $"CEDAR_POLICIES::{principalId}";
+
+        var policies = await _cache.Get<List<CedarSharp.AvpPolicy>>(cacheKey);
+
+        if (policies == default)
+        {
+            var userRoles = await _userRoleService.GetUserRolesByUserId(principalId);
+            
+            policies = userRoles
+                .Select(userRole => new CedarSharp.AvpPolicy(userRole.Id, userRole.Metadata))
+                .ToList();
+
+            // TODO: expiry
+            await _cache.Set(cacheKey, policies);
+        }
+
+        return policies;
     }
 }

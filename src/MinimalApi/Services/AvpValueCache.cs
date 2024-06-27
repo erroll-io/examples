@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Amazon.VerifiedPermissions;
@@ -9,15 +8,6 @@ using Amazon.VerifiedPermissions.Model;
 using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
-
-public class PolicyBrief
-{
-    public string PolicyId { get; set; }
-    public string PolicyTemplateId { get; set; }
-    public string Condition { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime ModifiedAt { get; set; }
-}
 
 public class AvpValueCache
 {
@@ -42,7 +32,10 @@ public class AvpValueCache
     {
         var avpCache = new AvpValueCache(avpClient, avpConfigOptions.Value);
 
+        // parse SSM params to build role/template lookup dicts
         avpCache.ParseConfigValues();
+
+        // parse all policy templates to build action lookup dict
         await avpCache.ParsePolicyTemplateActions();
 
         return avpCache;
@@ -143,4 +136,13 @@ public class AvpValueCache
             }
         }
     }
+}
+
+public class PolicyBrief
+{
+    public string PolicyId { get; set; }
+    public string PolicyTemplateId { get; set; }
+    public string Condition { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime ModifiedAt { get; set; }
 }

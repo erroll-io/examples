@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -7,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using MinimalApi.Services;
 
@@ -66,7 +64,6 @@ public class AuthClaimsTransformation : IClaimsTransformation
 
         if (claims != default && claims.Any())
         {
-            //_logger.LogInformation($"Using cached claims for {userId}.");
             return claims;
         }
 
