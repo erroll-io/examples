@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
+using MinimalApi.CedarSharp;
 using MinimalApi.Services;
-
-using static MinimalApi.CedarSharp.CedarsharpMethods;
 
 namespace MinimalApi;
 
@@ -37,14 +36,12 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
         
         var principalId = context.User.GetPrincipalIdentity();
 
-        var policies = await GetPolicies(principalId);
-
-        var result = Authorize(
-            policies,
+        var result = CedarsharpMethods.Authorize(
+            await GetPolicies(principalId),
             $"MinimalApi::User::\"{principalId}\"",
             requirement.Operation,
             // TODO: afaict a value is required here, and "*" does _not_ work:
-            requirement.Condition ?? "MinimalApi::PlaceHolder::0",
+            requirement.Condition ?? "MinimalApi::PlaceHolder::\"0\"",
             "",
             "");
 
@@ -60,24 +57,23 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
         }
     }
 
-    private async Task<List<CedarSharp.AvpPolicy>> GetPolicies(string principalId)
+    private async Task<List<CedarSharp.CedarPolicy>> GetPolicies(string principalId)
     {
-        // TODO: this needs further consideration. For now just get all of the
+        // TODO: this needs further consideration. For now just get/cache all of the
         // AVP Policies associated with the principal.
 
-        var cacheKey = $"CEDAR_POLICIES::{principalId}";
+        var cacheKey = $"authz_policies::{principalId}";
 
-        var policies = await _cache.Get<List<CedarSharp.AvpPolicy>>(cacheKey);
+        var policies = await _cache.Get<List<CedarSharp.CedarPolicy>>(cacheKey);
 
         if (policies == default)
         {
             var userRoles = await _userRoleService.GetUserRolesByUserId(principalId);
             
             policies = userRoles
-                .Select(userRole => new CedarSharp.AvpPolicy(userRole.Id, userRole.Metadata))
+                .Select(userRole => new CedarSharp.CedarPolicy(userRole.Id, userRole.Metadata))
                 .ToList();
 
-            // TODO: expiry
             await _cache.Set(cacheKey, policies);
         }
 

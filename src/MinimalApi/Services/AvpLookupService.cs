@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace MinimalApi.Services;
 
-public class AvpValueCache
+public class AvpLookupService
 {
     public Dictionary<string, string> RoleIdsByPolicyTemplateId { get; private set; }
     public Dictionary<string, string> PolicyTemplateIdsByRoleId { get; private set; }
@@ -20,17 +20,17 @@ public class AvpValueCache
     private readonly IAmazonVerifiedPermissions _avpClient;
     private readonly AvpConfig _avpConfig;
 
-    private AvpValueCache(IAmazonVerifiedPermissions avpClient, AvpConfig avpConfig)
+    private AvpLookupService(IAmazonVerifiedPermissions avpClient, AvpConfig avpConfig)
     {
         _avpClient = avpClient;
         _avpConfig = avpConfig;
     }
 
-    public static async Task<AvpValueCache> Initialize(
+    public static async Task<AvpLookupService> Initialize(
         IAmazonVerifiedPermissions avpClient,
         IOptions<AvpConfig> avpConfigOptions)
     {
-        var avpCache = new AvpValueCache(avpClient, avpConfigOptions.Value);
+        var avpCache = new AvpLookupService(avpClient, avpConfigOptions.Value);
 
         // parse SSM params to build role/template lookup dicts
         avpCache.ParseConfigValues();
