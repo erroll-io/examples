@@ -140,15 +140,16 @@ public class UserService : IUserService
 
         if (_cache != default)
         {
-            userId = await _cache.Get<string>(sub);
+            var cacheKey = $"USER_IDS::{sub}";
+
+            userId = await _cache.Get<string>(cacheKey);
 
             if (string.IsNullOrEmpty(userId))
             {
                 var userResult = await GetCurrentUser(principal);
                 userId = userResult.Result.Id;
 
-                // TODO: expiry
-                await _cache.Set(sub, userId);
+                await _cache.Set(cacheKey, userId);
             }
         }
         else

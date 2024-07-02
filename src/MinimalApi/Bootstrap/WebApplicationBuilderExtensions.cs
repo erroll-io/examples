@@ -168,13 +168,13 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddScoped<UserRoleService>();
         builder.Services.AddScoped<AvpUserRoleService>();
-        builder.Services.AddSingleton<Func<Task<AvpValueCache>>>(provider =>
-            () => AvpValueCache.Initialize(
+        builder.Services.AddTransient<Func<Task<AvpLookupService>>>(provider => () =>
+            AvpLookupService.Initialize(
                 provider.GetRequiredService<IAmazonVerifiedPermissions>(),
                 provider.GetRequiredService<IOptions<AvpConfig>>()));
 
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
-        // TODO: temp hack for multi-strategy authz testing
+        // TODO: temp hack for multi-strategy authz testing; register by class
         builder.Services.AddScoped<AvpUserRoleService>();
 
         builder.Services.AddDistributedMemoryCache();

@@ -13,23 +13,23 @@ namespace MinimalApi.Services;
 public class AvpUserRoleService : IUserRoleService
 {
     private readonly IAmazonVerifiedPermissions _avpClient;
-    private readonly Func<Task<AvpValueCache>> _avpCacheFactory;
+    private readonly Func<Task<AvpLookupService>> AvpLookupFactory;
     private readonly AvpConfig _avpConfig;
 
-    private static Lazy<AvpValueCache> _avpCacheLazy;
-    private static AvpValueCache _avpCache => _avpCacheLazy.Value;
+    private static Lazy<AvpLookupService> _avpLookupLazy;
+    public static AvpLookupService AvpLookup => _avpLookupLazy.Value;
 
     public AvpUserRoleService(
         IAmazonVerifiedPermissions avpClient,
-        Func<Task<AvpValueCache>> avpCacheFactory,
+        Func<Task<AvpLookupService>> avpLookupFactory,
         IOptions<AvpConfig> avpConfigOptions)
     {
         _avpClient = avpClient;
-        _avpCacheFactory = avpCacheFactory;
+        AvpLookupFactory = avpLookupFactory;
         _avpConfig = avpConfigOptions.Value;
 
-        if (_avpCacheLazy == default)
-            _avpCacheLazy = new Lazy<AvpValueCache>(() => avpCacheFactory().Result);
+        if (_avpLookupLazy == default)
+            _avpLookupLazy = new Lazy<AvpLookupService>(() => avpLookupFactory().Result);
     }
 
     public async Task<UserRole> CreateUserRole(
@@ -92,7 +92,7 @@ public class AvpUserRoleService : IUserRoleService
         {
             Id = policy.PolicyId,
             UserId = policy.Principal.EntityId,
-            RoleId = _avpCache.RoleIdsByPolicyTemplateId[policy.Definition.TemplateLinked.PolicyTemplateId],
+            RoleId = AvpLookup.RoleIdsByPolicyTemplateId[policy.Definition.TemplateLinked.PolicyTemplateId],
             CreatedAt = policy.CreatedDate,
             ModifiedAt = policy.LastUpdatedDate
         };
@@ -100,19 +100,19 @@ public class AvpUserRoleService : IUserRoleService
 
     public async Task<IEnumerable<UserRole>> GetUserRolesByUserId(string principalId)
     {
-        var policies = await _avpCache.GetPoliciesForPrincipal(principalId);
+        var policies = await AvpLookup.GetPoliciesForPrincipal(principalId);
 
         return policies.Select(policyItem =>
             new UserRole()
             {
                 Id = policyItem.PolicyId,
                 UserId = principalId,
-                RoleId = _avpCache.RoleIdsByPolicyTemplateId[policyItem.PolicyTemplateId],
+                RoleId = AvpLookup.RoleIdsByPolicyTemplateId[policyItem.PolicyTemplateId],
                 Condition = policyItem.Condition,
-                Metadata = AvpLogic.InterpolateStatement(
-                    _avpCache.PolicyTemplateStatementsByPolicyTemplateId[policyItem.PolicyTemplateId],
-                    $"MinimalApi::User::\"{principalId}\"",
-                    policyItem.Condition),
+                //Metadata = AvpLogic.InterpolateStatement(
+                //    AvpLookup.PolicyTemplateStatementsByPolicyTemplateId[policyItem.PolicyTemplateId],
+                //    $"MinimalApi::User::\"{principalId}\"",
+                //    policyItem.Condition),
                 CreatedAt = policyItem.CreatedAt,
                 ModifiedAt = policyItem.ModifiedAt 
             });
@@ -128,7 +128,7 @@ public class AvpUserRoleService : IUserRoleService
         if (roleComparisonOperator == "BEGINS_WITH")
         {
             // hackily recapitulate dynamo BEGINS_WITH
-            roleIds = _avpCache.RoleIdsByPolicyTemplateId.Values.Where(r => r.StartsWith(roleId)).ToList();
+            roleIds = AvpLookup.RoleIdsByPolicyTemplateId.Values.Where(r => r.StartsWith(roleId)).ToList();
         }
         else
         {
@@ -158,7 +158,7 @@ public class AvpUserRoleService : IUserRoleService
             {
                 Id = policyItem.PolicyId,
                 UserId = policyItem.Principal.EntityId,
-                RoleId = _avpCache.RoleIdsByPolicyTemplateId[policyItem.Definition.TemplateLinked.PolicyTemplateId],
+                RoleId = AvpLookup.RoleIdsByPolicyTemplateId[policyItem.Definition.TemplateLinked.PolicyTemplateId],
                 Condition = $"{policyItem.Resource.EntityType}:{policyItem.Resource.EntityId}",
                 CreatedAt = policyItem.CreatedDate,
                 ModifiedAt = policyItem.LastUpdatedDate
@@ -173,10 +173,10 @@ public class AvpUserRoleService : IUserRoleService
         string action,
         string conditionType)
     {
-        if (!_avpCache.PolicyTemplateIdsByAction.TryGetValue(action, out var policyTemplateIdsByAction))
+        if (!AvpLookup.PolicyTemplateIdsByAction.TryGetValue(action, out var policyTemplateIdsByAction))
             throw new Exception($"Unknown action '{action}'.");
 
-        var policyTemplateIdsGrantingAction = _avpCache.PolicyTemplateIdsByAction[action];
+        var policyTemplateIdsGrantingAction = AvpLookup.PolicyTemplateIdsByAction[action];
 
         // TODO: pagination
 
@@ -233,7 +233,7 @@ public class AvpUserRoleService : IUserRoleService
 
     private string GetPolicyTemplateIdForRole(string roleId)
     {
-        if (!_avpCache.PolicyTemplateIdsByRoleId.TryGetValue(
+        if (!AvpLookup.PolicyTemplateIdsByRoleId.TryGetValue(
             roleId/*.Substring(roleId.LastIndexOf("::") + 2)*/, out var policyTemplateId))
         {
             throw new Exception("Invalid role.");

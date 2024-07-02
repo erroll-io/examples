@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
+using MinimalApi.CedarSharp;
 using MinimalApi.Services;
-
-using static MinimalApi.CedarSharp.CedarsharpMethods;
 
 namespace MinimalApi;
 
@@ -37,10 +36,8 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
         
         var principalId = context.User.GetPrincipalIdentity();
 
-        var policies = await GetPolicies(principalId);
-
-        var result = Authorize(
-            policies,
+        var result = CedarsharpMethods.Authorize(
+            await GetPolicies(principalId),
             $"MinimalApi::User::\"{principalId}\"",
             requirement.Operation,
             // TODO: afaict a value is required here, and "*" does _not_ work:
@@ -62,25 +59,29 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
 
     private async Task<List<CedarSharp.CedarPolicy>> GetPolicies(string principalId)
     {
-        // TODO: this needs further consideration. For now just get all of the
+        // TODO: this needs further consideration. For now just get/cache all of the
         // AVP Policies associated with the principal.
 
-        var cacheKey = $"CEDAR_POLICIES::{principalId}";
+        var cacheKey = $"authz_policies::{principalId}";
 
-        var policies = await _cache.Get<List<CedarSharp.CedarPolicy>>(cacheKey);
+        var policyIds = await _cache.Get<string[]>(cacheKey);
 
-        if (policies == default)
+        if (policyIds == default)
         {
             var userRoles = await _userRoleService.GetUserRolesByUserId(principalId);
             
-            policies = userRoles
-                .Select(userRole => new CedarSharp.CedarPolicy(userRole.Id, userRole.Metadata))
-                .ToList();
+            policyIds = userRoles
+                .Select(userRole => userRole.Id)
+                .ToArray();
 
-            // TODO: expiry
-            await _cache.Set(cacheKey, policies);
+            await _cache.Set(cacheKey, policyIds);
         }
 
-        return policies;
+        return policyIds
+            .Select(policyId =>
+                new CedarSharp.CedarPolicy(
+                    policyId,
+                    AvpUserRoleService.AvpLookup.PolicyTemplateStatementsByPolicyTemplateId[policyId]))
+            .ToList();
     }
 }
