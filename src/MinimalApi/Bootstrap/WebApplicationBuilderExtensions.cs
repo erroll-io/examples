@@ -47,10 +47,10 @@ public static class WebApplicationBuilderExtensions
                     $"appsettings.{builder.Environment.EnvironmentName}.json"),
                 true);
 
-        builder.Configuration.AddSystemsManagerWithHack("/minimal-api");
+        builder.Configuration.AddSystemsManagerWithHack(appName);
         //builder.Configuration.AddSystemsManager(configurationSource =>
         //{
-        //    configurationSource.Path = "/minimal-api";
+        //    configurationSource.Path = appName;
         //    configurationSource.ParameterProcessor = new HybridParameterProcessor();
         //});
 
