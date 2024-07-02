@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using MathNet.Numerics.Statistics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MinimalApi.CedarSharp;
 
 
@@ -47,6 +48,7 @@ public class CedarComparisonService
     public CedarComparisonService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+
     }
 
     public async Task<IEnumerable<AuthorizationComparisonResult>> Compare(int? n)

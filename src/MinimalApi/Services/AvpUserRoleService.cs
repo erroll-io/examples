@@ -109,10 +109,10 @@ public class AvpUserRoleService : IUserRoleService
                 UserId = principalId,
                 RoleId = AvpLookup.RoleIdsByPolicyTemplateId[policyItem.PolicyTemplateId],
                 Condition = policyItem.Condition,
-                //Metadata = AvpLogic.InterpolateStatement(
-                //    AvpLookup.PolicyTemplateStatementsByPolicyTemplateId[policyItem.PolicyTemplateId],
-                //    $"MinimalApi::User::\"{principalId}\"",
-                //    policyItem.Condition),
+                Metadata = AvpLogic.InterpolateStatement(
+                    AvpLookup.PolicyTemplateStatementsByPolicyTemplateId[policyItem.PolicyTemplateId],
+                    $"MinimalApi::User::\"{principalId}\"",
+                    policyItem.Condition),
                 CreatedAt = policyItem.CreatedAt,
                 ModifiedAt = policyItem.ModifiedAt 
             });

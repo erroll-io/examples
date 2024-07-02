@@ -20,7 +20,7 @@ public static class TestEndpoints
     {
         var authorizationResult = await authorizationService.AuthorizeAsync(
             httpContextAccessor.HttpContext.User,
-            new OperationRequirement("MinimalApi::Action::\"ExecuteTests\""));
+            new OperationRequirement("MinimalApi::Action::\"ExecuteTests\"", null, "CEDAR"));
 
         if (!authorizationResult.Succeeded)
             return Results.Forbid();

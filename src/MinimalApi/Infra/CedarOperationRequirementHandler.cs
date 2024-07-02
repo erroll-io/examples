@@ -64,24 +64,19 @@ public class CedarOperationRequirementHandler : AuthorizationHandler<OperationRe
 
         var cacheKey = $"authz_policies::{principalId}";
 
-        var policyIds = await _cache.Get<string[]>(cacheKey);
+        var policies = await _cache.Get<List<CedarSharp.CedarPolicy>>(cacheKey);
 
-        if (policyIds == default)
+        if (policies == default)
         {
             var userRoles = await _userRoleService.GetUserRolesByUserId(principalId);
             
-            policyIds = userRoles
-                .Select(userRole => userRole.Id)
-                .ToArray();
+            policies = userRoles
+                .Select(userRole => new CedarSharp.CedarPolicy(userRole.Id, userRole.Metadata))
+                .ToList();
 
-            await _cache.Set(cacheKey, policyIds);
+            await _cache.Set(cacheKey, policies);
         }
 
-        return policyIds
-            .Select(policyId =>
-                new CedarSharp.CedarPolicy(
-                    policyId,
-                    AvpUserRoleService.AvpLookup.PolicyTemplateStatementsByPolicyTemplateId[policyId]))
-            .ToList();
+        return policies;
     }
 }

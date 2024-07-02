@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
+using Amazon.Extensions.Configuration.SystemsManager.Internal;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.VerifiedPermissions;
 using Microsoft.AspNetCore.Authentication;
@@ -46,8 +47,12 @@ public static class WebApplicationBuilderExtensions
                     $"appsettings.{builder.Environment.EnvironmentName}.json"),
                 true);
 
-        builder.Configuration.AddSystemsManagerWithHack(appName);
-        //builder.Configuration.AddSystemsManager("/minimal-api");
+        builder.Configuration.AddSystemsManagerWithHack("/minimal-api");
+        //builder.Configuration.AddSystemsManager(configurationSource =>
+        //{
+        //    configurationSource.Path = "/minimal-api";
+        //    configurationSource.ParameterProcessor = new HybridParameterProcessor();
+        //});
 
         builder.Services.Configure<AwsConfig>(builder.Configuration.GetSection<AwsConfig>());
         builder.Services.Configure<CryptoConfig>(builder.Configuration.GetSection<CryptoConfig>());
