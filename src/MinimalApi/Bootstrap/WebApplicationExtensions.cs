@@ -37,6 +37,7 @@ public static class WebApplicationExtensions
         app.MapGet("/projects/{projectId}/data", DataEndpoints.GetProjectData);
 
         app.MapGet("tests/authz-comparison", TestEndpoints.CompareAuthorizationStrategies);
+        app.MapGet("tests/cedar-timing", TestEndpoints.TestCedarPolicySize);
 
         return app;
     }

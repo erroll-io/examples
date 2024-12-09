@@ -31,17 +31,24 @@ public static class CacheLogic
         return JsonSerializer.Deserialize<T>(stringValue, _serializerOptions);
     }
 
-    public static Task Set(this IDistributedCache cache, string key, object value)
+    public static Task Set(
+        this IDistributedCache cache,
+        string key,
+        object value,
+        TimeSpan ttl = default)
     {
         var stringValue = JsonSerializer.Serialize(value, _serializerOptions);
+
+        // TODO: perhaps set this based on JWT exp
+        if (ttl == default)
+            ttl = TimeSpan.FromMinutes(5);
 
         return cache.SetAsync(
             key,
             Encoding.UTF8.GetBytes(stringValue),
             new DistributedCacheEntryOptions()
             {
-                // TODO: perhaps set this based on JWT exp
-                AbsoluteExpiration = DateTime.UtcNow + TimeSpan.FromMinutes(5)
+                AbsoluteExpiration = DateTime.UtcNow + ttl
             });
     }
 }

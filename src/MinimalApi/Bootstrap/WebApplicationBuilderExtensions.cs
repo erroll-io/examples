@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
+using Amazon.Extensions.Configuration.SystemsManager.Internal;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.VerifiedPermissions;
 using Microsoft.AspNetCore.Authentication;
@@ -47,7 +48,11 @@ public static class WebApplicationBuilderExtensions
                 true);
 
         builder.Configuration.AddSystemsManagerWithHack(appName);
-        //builder.Configuration.AddSystemsManager("/minimal-api");
+        //builder.Configuration.AddSystemsManager(configurationSource =>
+        //{
+        //    configurationSource.Path = appName;
+        //    configurationSource.ParameterProcessor = new HybridParameterProcessor();
+        //});
 
         builder.Services.Configure<AwsConfig>(builder.Configuration.GetSection<AwsConfig>());
         builder.Services.Configure<CryptoConfig>(builder.Configuration.GetSection<CryptoConfig>());
@@ -168,13 +173,13 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddScoped<UserRoleService>();
         builder.Services.AddScoped<AvpUserRoleService>();
-        builder.Services.AddSingleton<Func<Task<AvpValueCache>>>(provider =>
-            () => AvpValueCache.Initialize(
+        builder.Services.AddTransient<Func<Task<AvpLookupService>>>(provider => () =>
+            AvpLookupService.Initialize(
                 provider.GetRequiredService<IAmazonVerifiedPermissions>(),
                 provider.GetRequiredService<IOptions<AvpConfig>>()));
 
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
-        // TODO: temp hack for multi-strategy authz testing
+        // TODO: temp hack for multi-strategy authz testing; register by class
         builder.Services.AddScoped<AvpUserRoleService>();
 
         builder.Services.AddDistributedMemoryCache();
